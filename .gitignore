@@ -1,0 +1,35 @@
+*.dat
+*.o
+*.a
+*~
+run
+submit
+submit.*
+*.mod
+.*.swp
+.DS_STORE
+tea.out
+*.ptx
+*.cub
+*.lst
+tealeaf
+tealeaf.*
+.ycm_extra_conf.py*
+*.optrpt
+src.*
+tags
+
+# CMake
+cmake-build-*/
+Build/
+build/
+.idea/
+
+# IntelliJ
+out/
+
+
+# KDE directory preferences
+.directory
+
+clover.out
