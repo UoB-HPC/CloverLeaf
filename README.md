@@ -22,6 +22,8 @@ paths:
 CloverLeaf is currently implemented in the following parallel programming models, listed in no
 particular order:
 
+- CUDA
+- HIP
 - OpenMP 3 and 4.5
 - C++ Parallel STL
 - Kokkos
@@ -29,8 +31,6 @@ particular order:
 
 TODO:
 
-- CUDA
-- HIP
 - OpenACC
 - RAJA
 - TBB

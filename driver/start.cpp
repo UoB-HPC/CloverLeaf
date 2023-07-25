@@ -40,7 +40,7 @@
 
 extern std::ostream g_out;
 
- global_variables start(parallel_ &parallel, const global_config &config, clover::context ctx) {
+global_variables start(parallel_ &parallel, const global_config &config, clover::context ctx) {
 
   if (parallel.boss) {
     g_out << "Setting up initial geometry" << std::endl << std::endl;
@@ -76,10 +76,14 @@ extern std::ostream g_out;
     g_out << "Generating chunks" << std::endl;
   }
 
+  if (!globals.config.dumpDir.empty())
+    clover::dump(globals, std::to_string(parallel.task) + "_" + std::to_string(globals.step) + "_00_build_field.txt");
   for (int tile = 0; tile < config.tiles_per_chunk; ++tile) {
     initialise_chunk(tile, globals);
     generate_chunk(tile, globals);
   }
+  if (!globals.config.dumpDir.empty())
+    clover::dump(globals, std::to_string(parallel.task) + "_" + std::to_string(globals.step) + "_01_generate_chunk.txt");
 
   clover_barrier(globals);
 
@@ -91,6 +95,8 @@ extern std::ostream g_out;
   for (int tile = 0; tile < config.tiles_per_chunk; ++tile) {
     ideal_gas(globals, tile, false);
   }
+  if (!globals.config.dumpDir.empty())
+    clover::dump(globals, std::to_string(parallel.task) + "_" + std::to_string(globals.step) + "_02_ideal_gas.txt");
 
   // Prime all halo data for the first step
   // TODO replace with std::array
@@ -110,12 +116,17 @@ extern std::ostream g_out;
   fields[field_yvel1] = 1;
 
   update_halo(globals, fields, 2);
+  if (!globals.config.dumpDir.empty())
+    clover::dump(globals, std::to_string(parallel.task) + "_" + std::to_string(globals.step) + "_03_update_halo.txt");
 
   if (parallel.boss) {
+    std::cout << "Problem initialised and generated" << std::endl;
     g_out << std::endl << "Problem initialised and generated" << std::endl;
   }
 
   field_summary(globals, parallel);
+  if (!globals.config.dumpDir.empty())
+    clover::dump(globals, std::to_string(parallel.task) + "_" + std::to_string(globals.step) + "_04_field_summary.txt");
 
   if (config.visit_frequency != 0) visit(globals, parallel);
 
@@ -123,5 +134,5 @@ extern std::ostream g_out;
 
   globals.profiler_on = profiler_off;
 
-  return  (globals);
+  return globals;
 }

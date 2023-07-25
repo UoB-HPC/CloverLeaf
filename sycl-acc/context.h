@@ -155,7 +155,7 @@ template <typename T> struct Buffer2D {
   }
   clover::BufferMirror2D<T> mirrored2() { return {mirrored(), extent<0>(), extent<1>()}; }
 };
-template <typename T> using StagingBuffer1D = Buffer1D<T>;
+template <typename T> using StagingBuffer1D = Buffer1D<T>&;
 
 // safely offset an id<2> by j and k
 static inline sycl::id<2> offset(const sycl::id<2> idx, const int j, const int k) {

@@ -32,7 +32,7 @@ CloverLeaf. If not, see http://www.gnu.org/licenses/.
 #include <sstream>
 #include <string>
 
-std::pair<clover::context, std::string> create_context(const std::vector<std::string> &args) {
+std::pair<clover::context, run_args> create_context(bool silent, const std::vector<std::string> &args) {
 
   using device = std::pair<std::string, int>;
   auto num_devices = omp_get_num_devices();
@@ -44,14 +44,14 @@ std::pair<clover::context, std::string> create_context(const std::vector<std::st
   devices.emplace_back("host device (target:false)", -1);
 #endif
 
-  auto parsed = list_and_parse<device>(
-      devices, [](const auto &d) { return d.first; }, args);
+  auto [selected, parsed] = list_and_parse<device>(
+      silent, devices, [](const auto &d) { return d.first; }, args);
 
-  if (parsed.device.second != -1) {
-    omp_set_default_device(parsed.device.second);
+  if (selected.second != -1) {
+    omp_set_default_device(selected.second);
   }
 
-  return {clover::context{.use_target = parsed.device.second != -1}, parsed.file};
+  return {clover::context{.use_target = selected.second != -1}, parsed};
 }
 
 void report_context(const clover::context &ctx) {

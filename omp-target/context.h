@@ -55,27 +55,26 @@ template <typename T> struct Buffer1D {
   [[nodiscard]] constexpr size_t N() const { return size; }
   T *actual() { return data; }
 
-
   // alternatively, replace both assignment operators with
-    Buffer1D<T>& operator=(Buffer1D<T> other) noexcept {
-        std::swap(data, other.data);
-        std::swap(size, other.size);
-        return *this;
-    }
+  Buffer1D<T> &operator=(Buffer1D<T> other) noexcept {
+    std::swap(data, other.data);
+    std::swap(size, other.size);
+    return *this;
+  }
 
-//  Buffer1D &operator=(Buffer1D &&other) noexcept {
-//    size = other.size;
-//    std::swap(data, other.data);
-//    return *this;
-//  }
-//  Buffer1D<T> &operator=(const Buffer1D<T> &other) {
-//    if (this != &other) {
-//      delete[] data;
-//      std::copy(other.data, other.data + size, data);
-//      size = other.size;
-//    }
-//    return *this;
-//  }
+  //  Buffer1D &operator=(Buffer1D &&other) noexcept {
+  //    size = other.size;
+  //    std::swap(data, other.data);
+  //    return *this;
+  //  }
+  //  Buffer1D<T> &operator=(const Buffer1D<T> &other) {
+  //    if (this != &other) {
+  //      delete[] data;
+  //      std::copy(other.data, other.data + size, data);
+  //      size = other.size;
+  //    }
+  //    return *this;
+  //  }
 
   template <size_t D> [[nodiscard]] size_t extent() const {
     static_assert(D < 1);
@@ -103,25 +102,25 @@ template <typename T> struct Buffer2D {
   [[nodiscard]] constexpr size_t nY() const { return sizeY; }
   T *actual() { return data; }
 
-  Buffer2D<T>& operator=(Buffer2D<T> other) noexcept {
+  Buffer2D<T> &operator=(Buffer2D<T> other) noexcept {
     std::swap(data, other.data);
     std::swap(sizeX, other.sizeX);
     std::swap(sizeY, other.sizeY);
     return *this;
   }
 
-//  Buffer2D<T> &operator=(const Buffer2D<T> &other) {
-//    if (this != &other) {
-//      return *this = Buffer2D(other);
-//    }
-//  }
-//
-//  Buffer2D &operator=(Buffer2D &&other) noexcept {
-//    sizeX = other.sizeX;
-//    sizeY = other.sizeY;
-//    std::swap(data, other.data);
-//    return *this;
-//  }
+  //  Buffer2D<T> &operator=(const Buffer2D<T> &other) {
+  //    if (this != &other) {
+  //      return *this = Buffer2D(other);
+  //    }
+  //  }
+  //
+  //  Buffer2D &operator=(Buffer2D &&other) noexcept {
+  //    sizeX = other.sizeX;
+  //    sizeY = other.sizeY;
+  //    std::swap(data, other.data);
+  //    return *this;
+  //  }
 
   template <size_t D> [[nodiscard]] size_t extent() const {
     if constexpr (D == 0) {
@@ -140,8 +139,7 @@ template <typename T> struct Buffer2D {
   }
   clover::BufferMirror2D<T> mirrored2() { return {mirrored(), extent<0>(), extent<1>()}; }
 };
-template <typename T> using StagingBuffer1D = Buffer1D<T>;
-
+template <typename T> using StagingBuffer1D = Buffer1D<T> &;
 
 struct chunk_context {};
 

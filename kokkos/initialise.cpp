@@ -32,18 +32,17 @@
 
 #include <fstream>
 
-std::pair<clover::context, std::string> create_context(const std::vector<std::string> &args) {
+std::pair<clover::context, run_args> create_context(bool silent, const std::vector<std::string> &args) {
   if (!Kokkos::is_initialized()) {
     Kokkos::initialize();
   }
-  auto parsed = list_and_parse<std::string>(
-      {typeid(Kokkos::DefaultExecutionSpace).name()}, [](auto &d) { return d; }, args);
-  return {clover::context{}, parsed.file};
+  auto [_, parsed] = list_and_parse<std::string>(
+      silent, {typeid(Kokkos::DefaultExecutionSpace).name()}, [](auto &d) { return d; }, args);
+  return {clover::context{}, parsed};
 }
 
 void report_context(const clover::context &) {
   std::cout << "Using Kokkos " << (KOKKOS_VERSION / 10000) << "." << (KOKKOS_VERSION / 100 % 100) << "." << (KOKKOS_VERSION % 100)
             << std::endl;
-
-  std::cout << "Using backend: " << typeid(Kokkos::DefaultExecutionSpace).name() << std::endl;
+  std::cout << " - Backend: " << typeid(Kokkos::DefaultExecutionSpace).name() << std::endl;
 }

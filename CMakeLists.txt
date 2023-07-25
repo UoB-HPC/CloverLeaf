@@ -31,6 +31,12 @@ include(FetchContent)
 #    set(ENABLE_MPI ON)
 #endif ()
 
+#if (NOT MODEL)
+#    set(MODEL hip)
+#    SET(CMAKE_CXX_COMPILER /usr/lib/aomp_17.0-1/bin/hipcc)
+#    set(ENABLE_MPI ON)
+#endif ()
+
 
 ########
 #########
@@ -65,11 +71,14 @@ include(FetchContent)
 
 ########
 ######
-#set(MODEL cuda)
-#set(CMAKE_CUDA_COMPILER /opt/nvidia/hpc_sdk/Linux_x86_64/23.3/compilers/bin/nvcc)
-#set(CUDA_ARCH sm_60)
-#set(ENABLE_PROFILING ON)
-#set(MPI_HOME /usr/lib64/openmpi/)
+if (NOT MODEL)
+    set(MODEL cuda)
+    set(CMAKE_CUDA_COMPILER /opt/nvidia/hpc_sdk/Linux_x86_64/23.3/compilers/bin/nvcc)
+    set(CUDA_ARCH sm_60)
+    set(ENABLE_PROFILING ON)
+    set(MPI_HOME /usr/lib64/openmpi/)
+endif ()
+
 ######
 #set(MODEL sycl)
 #set(SYCL_COMPILER ONEAPI-DPCPP)
@@ -124,7 +133,7 @@ endif ()
 
 # setup some defaults flags for everything
 set(DEFAULT_DEBUG_CXX_FLAGS -O2)
-set(DEFAULT_RELEASE_CXX_FLAGS -O3 -march=native -g)
+set(DEFAULT_RELEASE_CXX_FLAGS -O3 -march=native)
 
 macro(hint_flag FLAG DESCRIPTION)
     if (NOT DEFINED ${FLAG})
@@ -263,8 +272,8 @@ set(MODEL_SRC
 register_model(omp USE_OMP ${MODEL_SRC})
 register_model(omp-target USE_OMP_TARGET ${MODEL_SRC})
 #register_model(serial USE_SERIAL ${MODEL_SRC}) # TODO
-#register_model(cuda USE_CUDA ${MODEL_SRC}) # TODO
-#register_model(hip USE_HIP ${MODEL_SRC}) # TODO
+register_model(cuda USE_CUDA ${MODEL_SRC})
+register_model(hip USE_HIP ${MODEL_SRC})
 register_model(std-indices USE_STD ${MODEL_SRC})
 register_model(kokkos USE_KOKKOS ${MODEL_SRC})
 register_model(sycl-acc USE_SYCL_ACC ${MODEL_SRC})

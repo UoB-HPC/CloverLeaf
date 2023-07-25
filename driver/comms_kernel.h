@@ -27,15 +27,15 @@ void clover_allocate_buffers(global_variables &globals, parallel_ &parallel);
 
 void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], int depth);
 
-void clover_send_recv_message_left(global_variables &globals, clover::StagingBuffer1D<double> &left_snd_buffer,
-                                   clover::StagingBuffer1D<double> &left_rcv_buffer, int total_size, int tag_send, int tag_recv,
+void clover_send_recv_message_left(global_variables &globals, clover::StagingBuffer1D<double> left_snd_buffer,
+                                   clover::StagingBuffer1D<double> left_rcv_buffer, int total_size, int tag_send, int tag_recv,
                                    MPI_Request &req_send, MPI_Request &req_recv);
-void clover_send_recv_message_right(global_variables &globals, clover::StagingBuffer1D<double> &right_snd_buffer,
-                                    clover::StagingBuffer1D<double> &right_rcv_buffer, int total_size, int tag_send, int tag_recv,
+void clover_send_recv_message_right(global_variables &globals, clover::StagingBuffer1D<double> right_snd_buffer,
+                                    clover::StagingBuffer1D<double> right_rcv_buffer, int total_size, int tag_send, int tag_recv,
                                     MPI_Request &req_send, MPI_Request &req_recv);
-void clover_send_recv_message_top(global_variables &globals, clover::StagingBuffer1D<double> &top_snd_buffer,
-                                  clover::StagingBuffer1D<double> &top_rcv_buffer, int total_size, int tag_send, int tag_recv,
+void clover_send_recv_message_top(global_variables &globals, clover::StagingBuffer1D<double> top_snd_buffer,
+                                  clover::StagingBuffer1D<double> top_rcv_buffer, int total_size, int tag_send, int tag_recv,
                                   MPI_Request &req_send, MPI_Request &req_recv);
-void clover_send_recv_message_bottom(global_variables &globals, clover::StagingBuffer1D<double> &bottom_snd_buffer,
-                                     clover::StagingBuffer1D<double> &top_rcv_buffer, int total_size, int tag_send, int tag_recv,
+void clover_send_recv_message_bottom(global_variables &globals, clover::StagingBuffer1D<double> bottom_snd_buffer,
+                                     clover::StagingBuffer1D<double> top_rcv_buffer, int total_size, int tag_send, int tag_recv,
                                      MPI_Request &req_send, MPI_Request &req_recv);

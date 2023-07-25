@@ -225,7 +225,8 @@ struct chunk_type {
 
 // Collection of globally defined variables
 struct global_config {
-
+  std::string dumpDir;
+  bool staging_buffer;
   std::vector<state_type> states;
   int number_of_states;
   int tiles_per_chunk;
@@ -261,19 +262,19 @@ struct global_variables {
 
   int error_condition{};
 
-  int step = 0;
+  int step{};
   bool advect_x = true;
-  double time = 0.0;
+  double time{};
 
-  double dt;
-  double dtold;
+  double dt{};
+  double dtold{};
 
   bool complete = false;
   bool report_test_fail = false;
   int jdt{}, kdt{};
 
-  bool profiler_on; // Internal code profiler to make comparisons across systems easier
-  profiler_type profiler;
+  bool profiler_on = false; // Internal code profiler to make comparisons across systems easier
+  profiler_type profiler{};
 
-  explicit global_variables(const global_config &config, clover::context queue, chunk_type chunk);
+  global_variables(const global_config &config, clover::context queue, chunk_type chunk);
 };

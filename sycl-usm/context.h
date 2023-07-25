@@ -76,7 +76,7 @@ template <typename T> struct Buffer2D {
   }
   clover::BufferMirror2D<T> mirrored2() { return {mirrored(), extent<0>(), extent<1>()}; }
 };
-template <typename T> using StagingBuffer1D = Buffer1D<T>;
+template <typename T> using StagingBuffer1D = Buffer1D<T> &;
 
 template <typename T> void free(sycl::queue &q, T &&b) { sycl::free(b.data, q); }
 

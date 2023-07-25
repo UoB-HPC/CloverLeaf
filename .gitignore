@@ -23,6 +23,7 @@ tags
 cmake-build-*/
 Build/
 build/
+build_*/
 .idea/
 
 # IntelliJ

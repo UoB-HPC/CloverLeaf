@@ -17,10 +17,13 @@
  CloverLeaf. If not, see http://www.gnu.org/licenses/.
  */
 
+#include <cstring>
 #include <functional>
+#include <sys/stat.h>
+#include <sys/types.h>
 
-#include "shared.h"
 #include "definitions.h"
+#include "shared.h"
 
 namespace clover {
 
@@ -56,33 +59,48 @@ static void record(const std::string &name, const std::function<void(std::ofstre
 
 // formats and then dumps content of 1d double buffer to stream
 static void show(std::ostream &out, const std::string &name, clover::Buffer1D<double> &buffer) {
-//  auto view = buffer.mirrored();
-//  out << name << "(" << 1 << ") [" << buffer.extent<0>() << "]" << std::endl;
-//  out << "\t";
-//  for (double i : view)
-//    out << i << ", ";
-//  out << std::endl;
+  auto view = buffer.mirrored();
+  out << name << "(" << 1 << ") [" << buffer.extent<0>() << "]" << std::endl;
+  out << "\t";
+  for (double i : view)
+    out << i << ", ";
+  out << std::endl;
 }
 
 // formats and then dumps content of 2d double buffer to stream
 static void show(std::ostream &out, const std::string &name, clover::Buffer2D<double> &buffer) {
-//  auto view = buffer.mirrored();
-//  out << name << "(" << 2 << ") [" << buffer.extent<0>() << "x" << buffer.extent<1>() << "]" << std::endl;
-//  out << "\t";
-//  for (size_t i = 0; i < buffer.extent<0>(); ++i) {
-//    out << view[i] << ", ";
-//    if (i % buffer.extent<1>() == 0) {
-//      out << "\t" << std::endl;
-//    }
-//  }
+  auto view = buffer.mirrored2();
+  out << name << "(" << 2 << ") [" << buffer.extent<0>() << "x" << buffer.extent<1>() << "]" << std::endl;
+  out << "\t";
+  for (size_t i = 0; i < buffer.extent<0>(); ++i) {
+    for (size_t j = 0; j < buffer.extent<1>(); ++j)
+        out << view(i,j) << ", ";
+    out << "\t" << std::endl;
+  }
+  out << std::endl;
 }
 
 // dumps all content to file; for debugging only
 void clover::dump(global_variables &g, const std::string &filename) {
-
+  if (g.config.dumpDir.empty()) return;
   std::cout << "Dumping globals to " << filename << std::endl;
 
-  record(filename, [&](std::ostream &out) {
+  const auto dir = g.config.dumpDir + "/";
+  struct stat info {};
+  if (stat(dir.c_str(), &info) != 0) {
+    std::cout << "Creating " << dir << " for field dump" << std::endl;
+    if (errno = 0; mkdir(dir.c_str(), 0777) != 0) {
+      std::cerr << "Cannot create " << dir << ": " << std::strerror(errno) << ", skipping field dump" << std::endl;
+      return;
+    }
+  } else if (info.st_mode & S_IFDIR) {
+    // dir exists, just write into it
+  } else {
+    std::cerr << dir << " already exists and is not a directory, skipping field dump" << std::endl;
+    return;
+  }
+
+  record(dir + filename, [&](std::ostream &out) {
     out << "Dump(tileCount = " << g.chunk.tiles.size() << ")" << std::endl;
 
     out << "error_condition" << '=' << g.error_condition << std::endl;

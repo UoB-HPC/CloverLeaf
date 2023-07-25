@@ -70,9 +70,9 @@ void timestep(global_variables &globals, parallel_ &parallel) {
 
   if (globals.profiler_on) kernel_time = timer();
 
-  int jldt, kldt;
-  double dtlp;
-  double x_pos, y_pos, xl_pos, yl_pos;
+  int jldt{}, kldt{};
+  double dtlp{};
+  double x_pos{}, y_pos{}, xl_pos{}, yl_pos{};
   std::string dt_control, dtl_control;
   for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {
     calc_dt(globals, tile, dtlp, dtl_control, xl_pos, yl_pos, jldt, kldt);
