@@ -35,7 +35,7 @@
     #include <CL/sycl.hpp>
 
 const static auto EXEC_POLICY =
-    oneapi::dpl::execution::device_policy<>{oneapi::dpl::execution::make_device_policy(cl::sycl::default_selector{})};
+    oneapi::dpl::execution::device_policy<>{oneapi::dpl::execution::make_device_policy(cl::sycl::device{cl::sycl::default_selector_v})};
 
 template <typename T> T *alloc_raw(size_t size) { return sycl::malloc_shared<T>(size, EXEC_POLICY.queue()); }
 

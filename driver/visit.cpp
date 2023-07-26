@@ -23,9 +23,9 @@
 #include "update_halo.h"
 #include "viscosity.h"
 
+#include <cmath>
 #include <fstream>
 #include <iomanip>
-#include <cmath>
 
 //  @brief Generates graphics output files.
 //  @author Wayne Gaudin
@@ -53,7 +53,7 @@ void visit(global_variables &globals, parallel_ &parallel) {
     }
   }
 
-  double kernel_time;
+  double kernel_time{};
   if (globals.profiler_on) kernel_time = timer();
   for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {
     ideal_gas(globals, tile, false);

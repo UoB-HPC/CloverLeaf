@@ -129,6 +129,7 @@ template <typename T> struct Buffer2D {
       return sizeY;
     } else {
       static_assert(D < 2);
+      return 0;
     }
   }
 

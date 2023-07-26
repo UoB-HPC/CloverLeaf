@@ -67,7 +67,7 @@ void advec_cell_kernel(int x_min, int x_max, int y_min, int y_max, int dir, int 
       for (int i = (x_min + 1); i < (x_max + 2 + 2); i++)
         ({
           int upwind, donor, downwind, dif;
-          double sigmat, sigma3, sigma4, sigmav, sigma, sigmam, diffuw, diffdw, limiter, wind;
+          double sigmat, sigma3, sigma4, sigmav, sigmam, diffuw, diffdw, limiter, wind;
           if (vol_flux_x(i, j) > 0.0) {
             upwind = i - 2;
             donor = i - 1;
@@ -82,7 +82,6 @@ void advec_cell_kernel(int x_min, int x_max, int y_min, int y_max, int dir, int 
           sigmat = std::fabs(vol_flux_x(i, j)) / pre_vol(donor, j);
           sigma3 = (1.0 + sigmat) * (vertexdx[i] / vertexdx[dif]);
           sigma4 = 2.0 - sigmat;
-          sigma = sigmat;
           sigmav = sigmat;
           diffuw = density1(donor, j) - density1(upwind, j);
           diffdw = density1(downwind, j) - density1(donor, j);
@@ -160,7 +159,7 @@ void advec_cell_kernel(int x_min, int x_max, int y_min, int y_max, int dir, int 
       for (int i = (x_min + 1); i < (x_max + 2); i++)
         ({
           int upwind, donor, downwind, dif;
-          double sigmat, sigma3, sigma4, sigmav, sigma, sigmam, diffuw, diffdw, limiter, wind;
+          double sigmat, sigma3, sigma4, sigmav, sigmam, diffuw, diffdw, limiter, wind;
           if (vol_flux_y(i, j) > 0.0) {
             upwind = j - 2;
             donor = j - 1;
@@ -175,7 +174,6 @@ void advec_cell_kernel(int x_min, int x_max, int y_min, int y_max, int dir, int 
           sigmat = std::fabs(vol_flux_y(i, j)) / pre_vol(i, donor);
           sigma3 = (1.0 + sigmat) * (vertexdy[j] / vertexdy[dif]);
           sigma4 = 2.0 - sigmat;
-          sigma = sigmat;
           sigmav = sigmat;
           diffuw = density1(i, donor) - density1(i, upwind);
           diffdw = density1(i, downwind) - density1(i, donor);

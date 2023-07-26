@@ -21,15 +21,6 @@
 #include "context.h"
 #include "timer.h"
 
-//#define par_ranged2m(rg, f) \
-//{"KERNEL2D_START";                        \
-//                           \
-//    Range2d range = rg;                    \
-//    for (size_t j = range.fromY; j < range.toY; j++) {        \
-//        for (size_t i = range.fromX; i < range.toX; i++)  {"KERNEL2D_A";f"KERNEL2D_B";}                           \
-//    }                                                      \
-//"KERNEL2D_END";}
-
 // @brief Fortran acceleration kernel
 // @author Wayne Gaudin
 // @details The pressure and viscosity gradients are used to update the

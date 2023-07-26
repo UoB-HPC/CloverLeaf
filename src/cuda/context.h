@@ -56,7 +56,7 @@ struct chunk_context {};
 struct context {};
 
 // Generic error checking for when callsite is async or unimportant
-static void checkError(const cudaError_t err = cudaGetLastError()) {
+static inline void checkError(const cudaError_t err = cudaGetLastError()) {
   if (err != cudaSuccess) {
     std::cerr << std::string(cudaGetErrorName(err)) + ": " + std::string(cudaGetErrorString(err)) << std::endl;
     std::abort();
@@ -77,7 +77,7 @@ template <typename T> static inline T *alloc(size_t count) {
   return static_cast<T *>(p);
 }
 
-static void dealloc(void *p) {
+static inline void dealloc(void *p) {
   if (auto result = cudaFree(p); result != cudaSuccess) {
     std::cerr << "Failed to deallocate " << p << ": " << cudaGetErrorString(result) << std::endl;
     std::abort();

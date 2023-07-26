@@ -130,8 +130,7 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
 
   clover_report_step_header(globals, parallel);
 
-
-  double kernel_time;
+  double kernel_time{};
   if (globals.profiler_on) kernel_time = timer();
 
   for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {

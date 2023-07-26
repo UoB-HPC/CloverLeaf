@@ -94,7 +94,13 @@ template <typename T> struct Buffer1D {
   // **for host buffers only**
   inline auto access() { return buffer.get_host_access(); }
 
-  template <sycl::access::mode mode> inline T *access_ptr(size_t count) { return buffer.template get_access<mode>(count).get_pointer(); }
+  template <sycl::access::mode mode> inline T *access_ptr(size_t count) {
+
+    return sycl::host_accessor<T, 1, mode>{buffer, count}.get_pointer();
+
+//    return buffer.get_host_access(count).get_pointer();
+//    return buffer.template get_access<mode>(count).get_pointer();
+  }
 
   template <size_t D> [[nodiscard]] size_t extent() const {
     static_assert(D < 1);

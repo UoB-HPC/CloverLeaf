@@ -91,7 +91,7 @@ void advec_cell_kernel(bool use_target, int x_min, int x_max, int y_min, int y_m
       for (int i = (x_min + 1); i < (x_max + 2 + 2); i++)
         ({
           int upwind, donor, downwind, dif;
-          double sigmat, sigma3, sigma4, sigmav, sigma, sigmam, diffuw, diffdw, limiter, wind;
+          double sigmat, sigma3, sigma4, sigmav, sigmam, diffuw, diffdw, limiter, wind;
           if (vol_flux_x[i + j * flux_x_stride] > 0.0) {
             upwind = i - 2;
             donor = i - 1;
@@ -207,7 +207,7 @@ void advec_cell_kernel(bool use_target, int x_min, int x_max, int y_min, int y_m
       for (int i = (x_min + 1); i < (x_max + 2); i++)
         ({
           int upwind, donor, downwind, dif;
-          double sigmat, sigma3, sigma4, sigmav, sigma, sigmam, diffuw, diffdw, limiter, wind;
+          double sigmat, sigma3, sigma4, sigmav, sigmam, diffuw, diffdw, limiter, wind;
           if (vol_flux_y[i + j * flux_y_stride] > 0.0) {
             upwind = j - 2;
             donor = j - 1;
@@ -280,7 +280,8 @@ void advec_cell_driver(global_variables &globals, int tile, int sweep_number, in
 #endif
 
   tile_type &t = globals.chunk.tiles[tile];
-  advec_cell_kernel(globals.context.use_target, t.info.t_xmin, t.info.t_xmax, t.info.t_ymin, t.info.t_ymax, direction, sweep_number, t.field);
+  advec_cell_kernel(globals.context.use_target, t.info.t_xmin, t.info.t_xmax, t.info.t_ymin, t.info.t_ymax, direction, sweep_number,
+                    t.field);
 
 #if SYNC_BUFFERS
   globals.deviceToHost();

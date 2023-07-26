@@ -28,8 +28,6 @@
 //  condition, the velocity gradient and the velocity divergence. A safety
 //  factor is used to ensure numerical stability.
 
-#define SPLIT
-
 void calc_dt_kernel(int x_min, int x_max, int y_min, int y_max, double dtmin, double dtc_safe, double dtu_safe, double dtv_safe,
                     double dtdiv_safe, clover::Buffer2D<double> &xarea, clover::Buffer2D<double> &yarea, clover::Buffer1D<double> &cellx,
                     clover::Buffer1D<double> &celly, clover::Buffer1D<double> &celldx, clover::Buffer1D<double> &celldy,
@@ -45,8 +43,6 @@ void calc_dt_kernel(int x_min, int x_max, int y_min, int y_max, double dtmin, do
   // DO k=y_min,y_max
   //   DO j=x_min,x_max
   //	Kokkos::MDRangePolicy <Kokkos::Rank<2>> policy({x_min + 1, y_min + 1}, {x_max + 2, y_max + 2});
-
-  auto policy = clover::Range2d(x_min + 1, y_min + 1, x_max + 2, y_max + 2);
 
   int xStart = x_min + 1, xEnd = x_max + 2;
   int yStart = y_min + 1, yEnd = y_max + 2;
@@ -97,15 +93,6 @@ void calc_dt_kernel(int x_min, int x_max, int y_min, int y_max, double dtmin, do
   if (dt_min_val < dtmin) small = 1;
 
   if (small != 0) {
-
-//    auto cellx_acc = cellx;
-//    auto celly_acc = celly;
-//    auto density0_acc = density0;
-//    auto energy0_acc = energy0;
-//    auto pressure_acc = pressure;
-//    auto soundspeed_acc = soundspeed;
-//    auto xvel0_acc = xvel0;
-//    auto yvel0_acc = yvel0;
 
     std::cout << "Timestep information:" << std::endl
               << "j, k                 : " << jldt << " " << kldt << std::endl

@@ -30,7 +30,10 @@ namespace clover {
 
 template <typename T, typename U, typename C> struct local_reducer {
 
-  sycl::accessor<T, 1, sycl::access::mode::read_write, sycl::access::target::local> local;
+
+
+  sycl::local_accessor<T, 1> local;
+//  sycl::accessor<T, 1, sycl::access::mode::read_write, sycl::access::target::local> local;
 
   C actual;
   sycl::accessor<U, 1, sycl::access::mode::read_write, sycl::access::target::device> result;

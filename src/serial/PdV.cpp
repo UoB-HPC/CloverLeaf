@@ -57,9 +57,6 @@ void PdV_kernel(bool predict, int x_min, int x_max, int y_min, int y_max, double
                           0.25 * dt * 0.5;
         double total_flux = right_flux - left_flux + top_flux - bottom_flux;
         double volume_change_s = volume(i, j) / (volume(i, j) + total_flux);
-        double min_cell_volume =
-            std::fmin(std::fmin(volume(i, j) + right_flux - left_flux + top_flux - bottom_flux, volume(i, j) + right_flux - left_flux),
-                      volume(i, j) + top_flux - bottom_flux);
         double recip_volume = 1.0 / volume(i, j);
         double energy_change = (pressure(i, j) / density0(i, j) + viscosity(i, j) / density0(i, j)) * total_flux * recip_volume;
         energy1(i, j) = energy0(i, j) - energy_change;
@@ -80,9 +77,6 @@ void PdV_kernel(bool predict, int x_min, int x_max, int y_min, int y_max, double
             (yarea(i + 0, j + 1) * (yvel0(i + 0, j + 1) + yvel0(i + 1, j + 1) + yvel1(i + 0, j + 1) + yvel1(i + 1, j + 1))) * 0.25 * dt;
         double total_flux = right_flux - left_flux + top_flux - bottom_flux;
         double volume_change_s = volume(i, j) / (volume(i, j) + total_flux);
-        double min_cell_volume =
-            std::fmin(std::fmin(volume(i, j) + right_flux - left_flux + top_flux - bottom_flux, volume(i, j) + right_flux - left_flux),
-                      volume(i, j) + top_flux - bottom_flux);
         double recip_volume = 1.0 / volume(i, j);
         double energy_change = (pressure(i, j) / density0(i, j) + viscosity(i, j) / density0(i, j)) * total_flux * recip_volume;
         energy1(i, j) = energy0(i, j) - energy_change;

@@ -56,7 +56,7 @@ void accelerate_kernel(int x_min, int x_max, int y_min, int y_max, double dt, Ko
 //  @details Calls user requested kernel
 void accelerate(global_variables &globals) {
 
-  double kernel_time;
+  double kernel_time{};
   if (globals.profiler_on) kernel_time = timer();
 
   for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {

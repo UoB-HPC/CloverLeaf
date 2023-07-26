@@ -60,7 +60,7 @@ void advec_cell_kernel(int x_min, int x_max, int y_min, int y_max, int dir, int 
     //   DO j=x_min,x_max+2
     clover::par_ranged2(Range2d{x_min + 1, y_min + 1, x_max + 2 + 2, y_max + 2}, [=] DEVICE_KERNEL(const int x, const int y) {
       int upwind, donor, downwind, dif;
-      double sigmat, sigma3, sigma4, sigmav, sigma, sigmam, diffuw, diffdw, limiter, wind;
+      double sigmat, sigma3, sigma4, sigmav,  sigmam, diffuw, diffdw, limiter, wind;
 
       const int j = x;
       const int k = y;
@@ -81,7 +81,6 @@ void advec_cell_kernel(int x_min, int x_max, int y_min, int y_max, int dir, int 
       sigma3 = (1.0 + sigmat) * (vertexdx[j] / vertexdx[dif]);
       sigma4 = 2.0 - sigmat;
 
-      sigma = sigmat;
       sigmav = sigmat;
 
       diffuw = density1(donor, k) - density1(upwind, k);
@@ -150,7 +149,7 @@ void advec_cell_kernel(int x_min, int x_max, int y_min, int y_max, int dir, int 
     //   DO j=x_min,x_max
     clover::par_ranged2(Range2d{x_min + 1, y_min + 1, x_max + 2, y_max + 2 + 2}, [=] DEVICE_KERNEL(const int x, const int y) {
       int upwind, donor, downwind, dif;
-      double sigmat, sigma3, sigma4, sigmav, sigma, sigmam, diffuw, diffdw, limiter, wind;
+      double sigmat, sigma3, sigma4, sigmav,  sigmam, diffuw, diffdw, limiter, wind;
 
       const int j = x;
       const int k = y;
@@ -171,7 +170,6 @@ void advec_cell_kernel(int x_min, int x_max, int y_min, int y_max, int dir, int 
       sigma3 = (1.0 + sigmat) * (vertexdy[k] / vertexdy[dif]);
       sigma4 = 2.0 - sigmat;
 
-      sigma = sigmat;
       sigmav = sigmat;
 
       diffuw = density1(j, donor) - density1(j, upwind);

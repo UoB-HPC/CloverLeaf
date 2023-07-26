@@ -57,7 +57,7 @@ struct chunk_context {};
 struct context {};
 
 // Generic error checking for when callsite is async or unimportant
-static void checkError(const hipError_t err = hipGetLastError()) {
+static inline void checkError(const hipError_t err = hipGetLastError()) {
   if (err != hipSuccess) {
     std::cerr << std::string(hipGetErrorName(err)) + ": " + std::string(hipGetErrorString(err)) << std::endl;
     std::abort();
@@ -78,7 +78,7 @@ template <typename T> static inline T *alloc(size_t count) {
   return static_cast<T *>(p);
 }
 
-static void dealloc(void *p) {
+static inline void dealloc(void *p) {
   if (auto result = hipFree(p); result != hipSuccess) {
     std::cerr << "Failed to deallocate " << p << ": " << hipGetErrorString(result) << std::endl;
     std::abort();

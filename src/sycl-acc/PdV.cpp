@@ -50,32 +50,19 @@ void PdV_kernel(handler &h, bool predict, int x_min, int x_max, int y_min, int y
     clover::par_ranged<class PdV_predict_true>(h, policy, [=](id<2> idx) {
       double left_flux =
           (xarea[idx] * (xvel0[idx] + xvel0[clover::offset(idx, 0, 1)] + xvel0[idx] + xvel0[clover::offset(idx, 0, 1)])) * 0.25 * dt * 0.5;
-
       double right_flux = (xarea[clover::offset(idx, 1, 0)] * (xvel0[clover::offset(idx, 1, 0)] + xvel0[clover::offset(idx, 1, 1)] +
                                                                xvel0[clover::offset(idx, 1, 0)] + xvel0[clover::offset(idx, 1, 1)])) *
                           0.25 * dt * 0.5;
-
       double bottom_flux =
           (yarea[idx] * (yvel0[idx] + yvel0[clover::offset(idx, 1, 0)] + yvel0[idx] + yvel0[clover::offset(idx, 1, 0)])) * 0.25 * dt * 0.5;
-
       double top_flux = (yarea[clover::offset(idx, 0, 1)] * (yvel0[clover::offset(idx, 0, 1)] + yvel0[clover::offset(idx, 1, 1)] +
                                                              yvel0[clover::offset(idx, 0, 1)] + yvel0[clover::offset(idx, 1, 1)])) *
                         0.25 * dt * 0.5;
-
       double total_flux = right_flux - left_flux + top_flux - bottom_flux;
-
       double volume_change_s = volume[idx] / (volume[idx] + total_flux);
-
-      double min_cell_volume =
-          sycl::fmin(sycl::fmin(volume[idx] + right_flux - left_flux + top_flux - bottom_flux, volume[idx] + right_flux - left_flux),
-                     volume[idx] + top_flux - bottom_flux);
-
       double recip_volume = 1.0 / volume[idx];
-
       double energy_change = (pressure[idx] / density0[idx] + viscosity[idx] / density0[idx]) * total_flux * recip_volume;
-
       energy1[idx] = energy0[idx] - energy_change;
-
       density1[idx] = density0[idx] * volume_change_s;
     });
 
@@ -84,32 +71,19 @@ void PdV_kernel(handler &h, bool predict, int x_min, int x_max, int y_min, int y
     clover::par_ranged<class PdV_predict_false>(h, policy, [=](id<2> idx) {
       double left_flux =
           (xarea[idx] * (xvel0[idx] + xvel0[clover::offset(idx, 0, 1)] + xvel1[idx] + xvel1[clover::offset(idx, 0, 1)])) * 0.25 * dt;
-
       double right_flux = (xarea[clover::offset(idx, 1, 0)] * (xvel0[clover::offset(idx, 1, 0)] + xvel0[clover::offset(idx, 1, 1)] +
                                                                xvel1[clover::offset(idx, 1, 0)] + xvel1[clover::offset(idx, 1, 1)])) *
                           0.25 * dt;
-
       double bottom_flux =
           (yarea[idx] * (yvel0[idx] + yvel0[clover::offset(idx, 1, 0)] + yvel1[idx] + yvel1[clover::offset(idx, 1, 0)])) * 0.25 * dt;
-
       double top_flux = (yarea[clover::offset(idx, 0, 1)] * (yvel0[clover::offset(idx, 0, 1)] + yvel0[clover::offset(idx, 1, 1)] +
                                                              yvel1[clover::offset(idx, 0, 1)] + yvel1[clover::offset(idx, 1, 1)])) *
                         0.25 * dt;
-
       double total_flux = right_flux - left_flux + top_flux - bottom_flux;
-
       double volume_change_s = volume[idx] / (volume[idx] + total_flux);
-
-      double min_cell_volume =
-          sycl::fmin(sycl::fmin(volume[idx] + right_flux - left_flux + top_flux - bottom_flux, volume[idx] + right_flux - left_flux),
-                     volume[idx] + top_flux - bottom_flux);
-
       double recip_volume = 1.0 / volume[idx];
-
       double energy_change = (pressure[idx] / density0[idx] + viscosity[idx] / density0[idx]) * total_flux * recip_volume;
-
       energy1[idx] = energy0[idx] - energy_change;
-
       density1[idx] = density0[idx] * volume_change_s;
     });
   }

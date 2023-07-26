@@ -47,29 +47,16 @@ void PdV_kernel(bool predict, int x_min, int x_max, int y_min, int y_max, double
     Kokkos::parallel_for(
         "PdV predict=true", policy, KOKKOS_LAMBDA(const int j, const int k) {
           double left_flux = (xarea(j, k) * (xvel0(j, k) + xvel0(j, k + 1) + xvel0(j, k) + xvel0(j, k + 1))) * 0.25 * dt * 0.5;
-
           double right_flux =
               (xarea(j + 1, k) * (xvel0(j + 1, k) + xvel0(j + 1, k + 1) + xvel0(j + 1, k) + xvel0(j + 1, k + 1))) * 0.25 * dt * 0.5;
-
           double bottom_flux = (yarea(j, k) * (yvel0(j, k) + yvel0(j + 1, k) + yvel0(j, k) + yvel0(j + 1, k))) * 0.25 * dt * 0.5;
-
           double top_flux =
               (yarea(j, k + 1) * (yvel0(j, k + 1) + yvel0(j + 1, k + 1) + yvel0(j, k + 1) + yvel0(j + 1, k + 1))) * 0.25 * dt * 0.5;
-
           double total_flux = right_flux - left_flux + top_flux - bottom_flux;
-
           double volume_change_s = volume(j, k) / (volume(j, k) + total_flux);
-
-          double min_cell_volume = Kokkos::min(
-              Kokkos::min(volume(j, k) + right_flux - left_flux + top_flux - bottom_flux, volume(j, k) + right_flux - left_flux),
-              volume(j, k) + top_flux - bottom_flux);
-
           double recip_volume = 1.0 / volume(j, k);
-
           double energy_change = (pressure(j, k) / density0(j, k) + viscosity(j, k) / density0(j, k)) * total_flux * recip_volume;
-
           energy1(j, k) = energy0(j, k) - energy_change;
-
           density1(j, k) = density0(j, k) * volume_change_s;
         });
 
@@ -78,28 +65,15 @@ void PdV_kernel(bool predict, int x_min, int x_max, int y_min, int y_max, double
     Kokkos::parallel_for(
         "PdV predict=false", policy, KOKKOS_LAMBDA(const int j, const int k) {
           double left_flux = (xarea(j, k) * (xvel0(j, k) + xvel0(j, k + 1) + xvel1(j, k) + xvel1(j, k + 1))) * 0.25 * dt;
-
           double right_flux =
               (xarea(j + 1, k) * (xvel0(j + 1, k) + xvel0(j + 1, k + 1) + xvel1(j + 1, k) + xvel1(j + 1, k + 1))) * 0.25 * dt;
-
           double bottom_flux = (yarea(j, k) * (yvel0(j, k) + yvel0(j + 1, k) + yvel1(j, k) + yvel1(j + 1, k))) * 0.25 * dt;
-
           double top_flux = (yarea(j, k + 1) * (yvel0(j, k + 1) + yvel0(j + 1, k + 1) + yvel1(j, k + 1) + yvel1(j + 1, k + 1))) * 0.25 * dt;
-
           double total_flux = right_flux - left_flux + top_flux - bottom_flux;
-
           double volume_change_s = volume(j, k) / (volume(j, k) + total_flux);
-
-          double min_cell_volume = Kokkos::min(
-              Kokkos::min(volume(j, k) + right_flux - left_flux + top_flux - bottom_flux, volume(j, k) + right_flux - left_flux),
-              volume(j, k) + top_flux - bottom_flux);
-
           double recip_volume = 1.0 / volume(j, k);
-
           double energy_change = (pressure(j, k) / density0(j, k) + viscosity(j, k) / density0(j, k)) * total_flux * recip_volume;
-
           energy1(j, k) = energy0(j, k) - energy_change;
-
           density1(j, k) = density0(j, k) * volume_change_s;
         });
   }
@@ -110,17 +84,10 @@ void PdV_kernel(bool predict, int x_min, int x_max, int y_min, int y_max, double
 //  @details Invokes the user specified kernel for the PdV update.
 void PdV(global_variables &globals, bool predict) {
 
-  double kernel_time;
+  double kernel_time{};
   if (globals.profiler_on) kernel_time = timer();
 
   globals.error_condition = 0;
-
-  int prdct;
-  if (predict) {
-    prdct = 0;
-  } else {
-    prdct = 1;
-  }
 
   for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {
     tile_type &t = globals.chunk.tiles[tile];

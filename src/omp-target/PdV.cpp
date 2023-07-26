@@ -55,10 +55,7 @@ void PdV_kernel(bool use_target, bool predict, int x_min, int x_max, int y_min, 
     double *pressure = field.pressure.data;
     double *viscosity = field.viscosity.data;
     double *xvel0 = field.xvel0.data;
-    double *xvel1 = field.xvel1.data;
     double *yvel0 = field.yvel0.data;
-    double *yvel1 = field.yvel1.data;
-    double *volume_change = field.work_array1.data;
 
 #pragma omp target teams distribute parallel for simd collapse(2) clover_use_target(use_target)
     for (int j = (y_min + 1); j < (y_max + 2); j++) {
@@ -79,9 +76,6 @@ void PdV_kernel(bool use_target, bool predict, int x_min, int x_max, int y_min, 
                           0.25 * dt * 0.5;
         double total_flux = right_flux - left_flux + top_flux - bottom_flux;
         double volume_change_s = volume[i + j * base_stride] / (volume[i + j * base_stride] + total_flux);
-        double min_cell_volume = fmin(fmin(volume[i + j * base_stride] + right_flux - left_flux + top_flux - bottom_flux,
-                                           volume[i + j * base_stride] + right_flux - left_flux),
-                                      volume[i + j * base_stride] + top_flux - bottom_flux);
         double recip_volume = 1.0 / volume[i + j * base_stride];
         double energy_change = (pressure[i + j * base_stride] / density0[i + j * base_stride] +
                                 viscosity[i + j * base_stride] / density0[i + j * base_stride]) *
@@ -106,7 +100,6 @@ void PdV_kernel(bool use_target, bool predict, int x_min, int x_max, int y_min, 
     double *xvel1 = field.xvel1.data;
     double *yvel0 = field.yvel0.data;
     double *yvel1 = field.yvel1.data;
-    double *volume_change = field.work_array1.data;
 
 #pragma omp target teams distribute parallel for simd collapse(2) clover_use_target(use_target)
     for (int j = (y_min + 1); j < (y_max + 2); j++) {
@@ -127,9 +120,6 @@ void PdV_kernel(bool use_target, bool predict, int x_min, int x_max, int y_min, 
                           0.25 * dt;
         double total_flux = right_flux - left_flux + top_flux - bottom_flux;
         double volume_change_s = volume[i + j * base_stride] / (volume[i + j * base_stride] + total_flux);
-        double min_cell_volume = fmin(fmin(volume[i + j * base_stride] + right_flux - left_flux + top_flux - bottom_flux,
-                                           volume[i + j * base_stride] + right_flux - left_flux),
-                                      volume[i + j * base_stride] + top_flux - bottom_flux);
         double recip_volume = 1.0 / volume[i + j * base_stride];
         double energy_change = (pressure[i + j * base_stride] / density0[i + j * base_stride] +
                                 viscosity[i + j * base_stride] / density0[i + j * base_stride]) *
