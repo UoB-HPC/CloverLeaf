@@ -32,7 +32,7 @@ CloverLeaf. If not, see http://www.gnu.org/licenses/.
 #include <sstream>
 #include <string>
 
-std::pair<clover::context, run_args> create_context(bool silent, const std::vector<std::string> &args) {
+model create_context(bool silent, const std::vector<std::string> &args) {
 
   using device = std::pair<std::string, int>;
   auto num_devices = omp_get_num_devices();
@@ -51,9 +51,10 @@ std::pair<clover::context, run_args> create_context(bool silent, const std::vect
     omp_set_default_device(selected.second);
   }
 
-  return {clover::context{.use_target = selected.second != -1}, parsed};
+  return model{clover::context{.use_target = selected.second != -1}, "OpenMP Target", selected.second != -1, parsed};
 }
 
 void report_context(const clover::context &ctx) {
-  std::cout << "Using OpenMP (target:" << (ctx.use_target ? "true" : "false") << ", #" << omp_get_default_device() << ")" << std::endl;
+  std::cout << " - Device: #" << omp_get_default_device() << ")"
+            << " - Target: " << (ctx.use_target ? "true" : "false") << std::endl;
 }

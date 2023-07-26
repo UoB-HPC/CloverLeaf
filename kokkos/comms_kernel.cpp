@@ -92,6 +92,8 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
   auto hm_bottom_snd_buffer = Kokkos::create_mirror_view(bottom_snd_buffer.view);
   auto hm_bottom_rcv_buffer = Kokkos::create_mirror_view(bottom_rcv_buffer.view);
 
+  bool stage = globals.config.staging_buffer;
+
   if (globals.chunk.chunk_neighbours[chunk_left] != external_face) {
     // do left exchanges
     // Find left hand tiles
@@ -102,9 +104,13 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     }
 
     // send and recv messages to the left
-    Kokkos::deep_copy(hm_left_snd_buffer, left_snd_buffer.view);
-    clover_send_recv_message_left(globals, hm_left_snd_buffer, hm_left_rcv_buffer, end_pack_index_left_right, 1, 2, request[message_count],
-                                  request[message_count + 1]);
+    if (!stage) Kokkos::fence();
+    else
+      Kokkos::deep_copy(hm_left_snd_buffer, left_snd_buffer.view);
+    clover_send_recv_message_left(globals,                                                         //
+                                  stage ? hm_left_snd_buffer.data() : left_snd_buffer.view.data(), //
+                                  stage ? hm_left_rcv_buffer.data() : left_rcv_buffer.view.data(), //
+                                  end_pack_index_left_right, 1, 2, request[message_count], request[message_count + 1]);
     message_count += 2;
   }
 
@@ -117,9 +123,13 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     }
 
     // send message to the right
-    Kokkos::deep_copy(hm_right_snd_buffer, right_snd_buffer.view);
-    clover_send_recv_message_right(globals, hm_right_snd_buffer, hm_right_rcv_buffer, end_pack_index_left_right, 2, 1,
-                                   request[message_count], request[message_count + 1]);
+    if (!stage) Kokkos::fence();
+    else
+      Kokkos::deep_copy(hm_right_snd_buffer, right_snd_buffer.view);
+    clover_send_recv_message_right(globals,                                                           //
+                                   stage ? hm_right_snd_buffer.data() : right_snd_buffer.view.data(), //
+                                   stage ? hm_right_rcv_buffer.data() : right_rcv_buffer.view.data(), //
+                                   end_pack_index_left_right, 2, 1, request[message_count], request[message_count + 1]);
     message_count += 2;
   }
 
@@ -127,8 +137,10 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
   MPI_Waitall(message_count, request, MPI_STATUS_IGNORE);
 
   // Copy back to the device
-  Kokkos::deep_copy(left_rcv_buffer.view, hm_left_rcv_buffer);
-  Kokkos::deep_copy(right_rcv_buffer.view, hm_right_rcv_buffer);
+  if (stage) {
+    Kokkos::deep_copy(left_rcv_buffer.view, hm_left_rcv_buffer);
+    Kokkos::deep_copy(right_rcv_buffer.view, hm_right_rcv_buffer);
+  }
 
   // unpack in left direction
   if (globals.chunk.chunk_neighbours[chunk_left] != external_face) {
@@ -160,10 +172,14 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
       }
     }
 
+    if (!stage) Kokkos::fence();
+    else
+      Kokkos::deep_copy(hm_bottom_snd_buffer, bottom_snd_buffer.view);
     // send message downwards
-    Kokkos::deep_copy(hm_bottom_snd_buffer, bottom_snd_buffer.view);
-    clover_send_recv_message_bottom(globals, hm_bottom_snd_buffer, hm_bottom_rcv_buffer, end_pack_index_bottom_top, 3, 4,
-                                    request[message_count], request[message_count + 1]);
+    clover_send_recv_message_bottom(globals,                                                             //
+                                    stage ? hm_bottom_snd_buffer.data() : bottom_snd_buffer.view.data(), //
+                                    stage ? hm_bottom_rcv_buffer.data() : bottom_rcv_buffer.view.data(), //
+                                    end_pack_index_bottom_top, 3, 4, request[message_count], request[message_count + 1]);
     message_count += 2;
   }
 
@@ -175,10 +191,14 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
       }
     }
 
+    if (!stage) Kokkos::fence();
+    else
+      Kokkos::deep_copy(hm_top_snd_buffer, top_snd_buffer.view);
     // send message upwards
-    Kokkos::deep_copy(hm_top_snd_buffer, top_snd_buffer.view);
-    clover_send_recv_message_top(globals, hm_top_snd_buffer, hm_top_rcv_buffer, end_pack_index_bottom_top, 4, 3, request[message_count],
-                                 request[message_count + 1]);
+    clover_send_recv_message_top(globals,                                                       //
+                                 stage ? hm_top_snd_buffer.data() : top_snd_buffer.view.data(), //
+                                 stage ? hm_top_rcv_buffer.data() : top_rcv_buffer.view.data(), //
+                                 end_pack_index_bottom_top, 4, 3, request[message_count], request[message_count + 1]);
     message_count += 2;
   }
 
@@ -186,8 +206,10 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
   MPI_Waitall(message_count, request, MPI_STATUS_IGNORE);
 
   // Copy back to the device
-  Kokkos::deep_copy(bottom_rcv_buffer.view, hm_bottom_rcv_buffer);
-  Kokkos::deep_copy(top_rcv_buffer.view, hm_top_rcv_buffer);
+  if (stage) {
+    Kokkos::deep_copy(bottom_rcv_buffer.view, hm_bottom_rcv_buffer);
+    Kokkos::deep_copy(top_rcv_buffer.view, hm_top_rcv_buffer);
+  }
 
   // unpack in top direction
   if (globals.chunk.chunk_neighbours[chunk_top] != external_face) {
@@ -208,35 +230,31 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
   }
 }
 
-void clover_send_recv_message_left(global_variables &globals, Kokkos::View<double *>::HostMirror &left_snd_buffer,
-                                   Kokkos::View<double *>::HostMirror &left_rcv_buffer, int total_size, int tag_send, int tag_recv,
-                                   MPI_Request &req_send, MPI_Request &req_recv) {
+void clover_send_recv_message_left(global_variables &globals, double *left_snd_buffer, double *left_rcv_buffer, int total_size,
+                                   int tag_send, int tag_recv, MPI_Request &req_send, MPI_Request &req_recv) {
   // First copy send buffer from device to host
   int left_task = globals.chunk.chunk_neighbours[chunk_left] - 1;
-  MPI_Isend(left_snd_buffer.data(), total_size, MPI_DOUBLE, left_task, tag_send, MPI_COMM_WORLD, &req_send);
-  MPI_Irecv(left_rcv_buffer.data(), total_size, MPI_DOUBLE, left_task, tag_recv, MPI_COMM_WORLD, &req_recv);
+  MPI_Isend(left_snd_buffer, total_size, MPI_DOUBLE, left_task, tag_send, MPI_COMM_WORLD, &req_send);
+  MPI_Irecv(left_rcv_buffer, total_size, MPI_DOUBLE, left_task, tag_recv, MPI_COMM_WORLD, &req_recv);
 }
-void clover_send_recv_message_right(global_variables &globals, Kokkos::View<double *>::HostMirror &right_snd_buffer,
-                                    Kokkos::View<double *>::HostMirror &right_rcv_buffer, int total_size, int tag_send, int tag_recv,
-                                    MPI_Request &req_send, MPI_Request &req_recv) {
+void clover_send_recv_message_right(global_variables &globals, double *right_snd_buffer, double *right_rcv_buffer, int total_size,
+                                    int tag_send, int tag_recv, MPI_Request &req_send, MPI_Request &req_recv) {
   // First copy send buffer from device to host
   int right_task = globals.chunk.chunk_neighbours[chunk_right] - 1;
-  MPI_Isend(right_snd_buffer.data(), total_size, MPI_DOUBLE, right_task, tag_send, MPI_COMM_WORLD, &req_send);
-  MPI_Irecv(right_rcv_buffer.data(), total_size, MPI_DOUBLE, right_task, tag_recv, MPI_COMM_WORLD, &req_recv);
+  MPI_Isend(right_snd_buffer, total_size, MPI_DOUBLE, right_task, tag_send, MPI_COMM_WORLD, &req_send);
+  MPI_Irecv(right_rcv_buffer, total_size, MPI_DOUBLE, right_task, tag_recv, MPI_COMM_WORLD, &req_recv);
 }
-void clover_send_recv_message_top(global_variables &globals, Kokkos::View<double *>::HostMirror &top_snd_buffer,
-                                  Kokkos::View<double *>::HostMirror &top_rcv_buffer, int total_size, int tag_send, int tag_recv,
-                                  MPI_Request &req_send, MPI_Request &req_recv) {
+void clover_send_recv_message_top(global_variables &globals, double *top_snd_buffer, double *top_rcv_buffer, int total_size, int tag_send,
+                                  int tag_recv, MPI_Request &req_send, MPI_Request &req_recv) {
   // First copy send buffer from device to host
   int top_task = globals.chunk.chunk_neighbours[chunk_top] - 1;
-  MPI_Isend(top_snd_buffer.data(), total_size, MPI_DOUBLE, top_task, tag_send, MPI_COMM_WORLD, &req_send);
-  MPI_Irecv(top_rcv_buffer.data(), total_size, MPI_DOUBLE, top_task, tag_recv, MPI_COMM_WORLD, &req_recv);
+  MPI_Isend(top_snd_buffer, total_size, MPI_DOUBLE, top_task, tag_send, MPI_COMM_WORLD, &req_send);
+  MPI_Irecv(top_rcv_buffer, total_size, MPI_DOUBLE, top_task, tag_recv, MPI_COMM_WORLD, &req_recv);
 }
-void clover_send_recv_message_bottom(global_variables &globals, Kokkos::View<double *>::HostMirror &bottom_snd_buffer,
-                                     Kokkos::View<double *>::HostMirror &bottom_rcv_buffer, int total_size, int tag_send, int tag_recv,
-                                     MPI_Request &req_send, MPI_Request &req_recv) {
+void clover_send_recv_message_bottom(global_variables &globals, double *bottom_snd_buffer, double *bottom_rcv_buffer, int total_size,
+                                     int tag_send, int tag_recv, MPI_Request &req_send, MPI_Request &req_recv) {
   // First copy send buffer from device to host
   int bottom_task = globals.chunk.chunk_neighbours[chunk_bottom] - 1;
-  MPI_Isend(bottom_snd_buffer.data(), total_size, MPI_DOUBLE, bottom_task, tag_send, MPI_COMM_WORLD, &req_send);
-  MPI_Irecv(bottom_rcv_buffer.data(), total_size, MPI_DOUBLE, bottom_task, tag_recv, MPI_COMM_WORLD, &req_recv);
+  MPI_Isend(bottom_snd_buffer, total_size, MPI_DOUBLE, bottom_task, tag_send, MPI_COMM_WORLD, &req_send);
+  MPI_Irecv(bottom_rcv_buffer, total_size, MPI_DOUBLE, bottom_task, tag_recv, MPI_COMM_WORLD, &req_recv);
 }

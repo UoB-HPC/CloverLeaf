@@ -21,6 +21,7 @@
 //  @author Wayne Gaudin
 //  @details Outputs error messages and aborts the calculation.
 
+#include <cmath>
 #include <iomanip>
 #include <iostream>
 
@@ -30,9 +31,9 @@
 void report_error(char *location, char *error) {
 
   std::cout << std::endl
-            << "Error from " << location << ":" << std::endl
+            << " Error from " << location << ":" << std::endl
             << error << std::endl
-            << "CLOVER is terminating." << std::endl
+            << " CLOVER is terminating." << std::endl
             << std::endl;
 
   g_out << std::endl
@@ -78,15 +79,15 @@ void clover_report_step(global_variables &globals, parallel_ &parallel, //
         if (globals.config.test_problem == 3) qa_diff = std::fabs((100.0 * (ke / 2.58984003503994)) - 100.0);
         if (globals.config.test_problem == 4) qa_diff = std::fabs((100.0 * (ke / 0.307475452287895)) - 100.0);
         if (globals.config.test_problem == 5) qa_diff = std::fabs((100.0 * (ke / 4.85350315783719)) - 100.0);
-        std::cout << "Test problem " << globals.config.test_problem << " is within " << qa_diff << "% of the expected solution"
+        std::cout << " Test problem " << globals.config.test_problem << " is within " << qa_diff << "% of the expected solution"
                   << std::endl;
         g_out << "Test problem " << globals.config.test_problem << " is within " << qa_diff << "% of the expected solution" << std::endl;
-        if (qa_diff < 0.001) {
-          std::cout << "This test is considered PASSED" << std::endl;
+        if (!std::isnan(qa_diff) && qa_diff < 0.001) {
+          std::cout << " This test is considered PASSED" << std::endl;
           g_out << "This test is considered PASSED" << std::endl;
           globals.report_test_fail = false;
         } else {
-          std::cout << "This test is considered NOT PASSED" << std::endl;
+          std::cout << " This test is considered NOT PASSED" << std::endl;
           g_out << "This test is considered NOT PASSED" << std::endl;
           globals.report_test_fail = true;
         }

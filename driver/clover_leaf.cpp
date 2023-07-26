@@ -54,9 +54,11 @@ std::ofstream of;
 
 global_variables initialise(parallel_ &parallel, const std::vector<std::string> &args) {
   global_config config;
-
-  auto &&[ctx, run_args] = create_context(!parallel.boss, args);
-  config.dumpDir = run_args.dumpDir;
+  if (parallel.boss) {
+    std::cout << "---" << std::endl;
+  }
+  auto model = create_context(!parallel.boss, args);
+  config.dumpDir = model.args.dumpDir;
 
   bool mpi_enabled =
 #ifdef NO_MPI
@@ -76,30 +78,53 @@ global_variables initialise(parallel_ &parallel, const std::vector<std::string> 
 
   std::optional<bool> mpi_cuda_aware_runtime =
 #if defined(MPIX_CUDA_AWARE_SUPPORT)
-      MPIX_Query_cuda_support() ? true : false;
+      MPIX_Query_cuda_support() != 0;
 #else
       {};
 #endif
-  switch (run_args.staging_buffer) {
-    case run_args::staging_buffer::enabled: config.staging_buffer = true; break;
-    case run_args::staging_buffer::disable: config.staging_buffer = false; break;
-    case run_args::staging_buffer::automatic:
-      config.staging_buffer = !(mpi_cuda_aware_header.value_or(false) && mpi_cuda_aware_runtime.value_or(false));
-      break;
+
+  if (!model.offload) {
+    if (model.args.staging_buffer == run_args::staging_buffer::enabled) {
+      std::cout << "WARNING: enabling staging buffer on a non-offload (host) model or device is no-op" << std::endl;
+    }
+    config.staging_buffer = false;
+  } else {
+    switch (model.args.staging_buffer) {
+      case run_args::staging_buffer::enabled: config.staging_buffer = true; break;
+      case run_args::staging_buffer::disable: config.staging_buffer = false; break;
+      case run_args::staging_buffer::automatic:
+        config.staging_buffer = !(mpi_cuda_aware_header.value_or(false) && mpi_cuda_aware_runtime.value_or(false));
+        break;
+    }
   }
 
   if (parallel.boss) {
-    std::cout << "MPI: " << (mpi_enabled ? "true" : "false") << std::endl;
-    std::cout << " - MPI header device-awareness (CUDA-awareness): "
-              << (mpi_cuda_aware_header ? (*mpi_cuda_aware_header ? "true" : "false") : "unknown") << std::endl;
-    std::cout << " - MPI runtime device-awareness (CUDA-awareness): "
-              << (mpi_cuda_aware_runtime ? (*mpi_cuda_aware_runtime ? "true" : "false") : "unknown") << std::endl;
-    std::cout << " - Host-Device halo exchange staging buffer: " << (config.staging_buffer ? "true" : "false") << std::endl;
-    report_context(ctx);
+    std::cout << "CloverLeaf:\n"
+              << " - Ver.:     " << g_version << "\n"
+              << " - Deck:     " << model.args.inFile << "\n"
+              << " - Out:      " << model.args.outFile << "\n"
+              << " - Profiler: " << (model.args.profile ? (*model.args.profile ? "true" : "false") : "deck-specified") << "\n"
+              << "MPI:\n"
+              << " - Enabled:     " << (mpi_enabled ? "true" : "false") << "\n"
+              << " - Total ranks: " << parallel.max_task << "\n"
+              << " - Header device-awareness (CUDA-awareness):  "
+              << (mpi_cuda_aware_header ? (*mpi_cuda_aware_header ? "true" : "false") : "unknown") << "\n"
+              << " - Runtime device-awareness (CUDA-awareness): "
+              << (mpi_cuda_aware_runtime ? (*mpi_cuda_aware_runtime ? "true" : "false") : "unknown") << "\n"
+              << " - Host-Device halo exchange staging buffer:  " << (!model.offload ? "N/A" : (config.staging_buffer ? "true" : "false"))
+              << "\n"
+              << "Model:\n"
+              << " - Name:      " << model.name << "\n"
+              << " - Execution: " << (model.offload ? "Offload (device)" : "Host") //
+              << std::endl;
+    report_context(model.context);
+    std::cout << "# ---- " << std::endl;
+    std::cout << "Output: |+1" << std::endl;
   }
 
   if (parallel.boss) {
-    of.open(run_args.outFile.empty() ? "clover.out" : run_args.outFile);
+    std::cout << " Output file clover.out opened. All output will go there." << std::endl;
+    of.open(model.args.outFile.empty() ? "clover.out" : model.args.outFile);
     if (!of.is_open()) report_error((char *)"initialise", (char *)"Error opening clover.out file.");
     g_out.rdbuf(of.rdbuf());
   } else {
@@ -110,7 +135,6 @@ global_variables initialise(parallel_ &parallel, const std::vector<std::string> 
     g_out << "Clover Version " << g_version << std::endl     //
           << "Task Count " << parallel.max_task << std::endl //
           << std::endl;
-    std::cout << "Output file clover.out opened. All output will go there." << std::endl;
   }
 
   clover_barrier();
@@ -119,18 +143,18 @@ global_variables initialise(parallel_ &parallel, const std::vector<std::string> 
   if (parallel.boss) {
     g_out << "Clover will run from the following input:-" << std::endl << std::endl;
     if (!args.empty()) {
-      std::cout << "Args:";
+      std::cout << " Args:";
       for (const auto &arg : args)
         std::cout << " " << arg;
       std::cout << std::endl;
     }
   }
 
-  if (!run_args.inFile.empty()) {
-    if (parallel.boss) std::cout << "Using input: `" << run_args.inFile << "`" << std::endl;
-    g_in.open(run_args.inFile);
+  if (!model.args.inFile.empty()) {
+    if (parallel.boss) std::cout << " Using input: `" << model.args.inFile << "`" << std::endl;
+    g_in.open(model.args.inFile);
     if (g_in.fail()) {
-      std::cerr << "Unable to open file: `" << run_args.inFile << "`" << std::endl;
+      std::cerr << "Unable to open file: `" << model.args.inFile << "`" << std::endl;
       std::exit(1);
     }
   } else {
@@ -161,8 +185,8 @@ global_variables initialise(parallel_ &parallel, const std::vector<std::string> 
     g_out << std::endl << "Initialising and generating" << std::endl << std::endl;
   }
   read_input(g_in, parallel, config);
-  if (run_args.profile) {
-    config.profiler_on = *run_args.profile;
+  if (model.args.profile) {
+    config.profiler_on = *model.args.profile;
   }
 
   clover_barrier();
@@ -170,7 +194,7 @@ global_variables initialise(parallel_ &parallel, const std::vector<std::string> 
   //	globals.step = 0;
   config.number_of_chunks = parallel.max_task;
 
-  auto globals = start(parallel, config, ctx);
+  auto globals = start(parallel, config, model.context);
   clover_barrier(globals);
   if (parallel.boss) {
     g_out << "Starting the calculation" << std::endl;
@@ -183,24 +207,18 @@ int main(int argc, char *argv[]) {
 
   MPI_Init(&argc, &argv);
   parallel_ parallel;
-
-  if (parallel.boss) {
-    std::cout << std::endl
-              << "Clover Version " << g_version << std::endl //
-              << "Task Count " << parallel.max_task << std::endl
-              << std::endl;
-  }
-
   global_variables config = initialise(parallel, std::vector<std::string>(argv + 1, argv + argc));
   if (parallel.boss) {
-    std::cout << "Launching hydro" << std::endl;
+    std::cout << " Launching hydro" << std::endl;
   }
   hydro(config, parallel);
   finalise(config);
   MPI_Finalize();
 
   if (parallel.boss) {
-    std::cout << "Done" << (config.report_test_fail ? ", but test problem FAILED!" : "") << std::endl;
+    std::cout << "Result:\n"
+              << " - Problem: " << (config.config.test_problem == 0 ? "none" : std::to_string(config.config.test_problem)) << "\n"
+              << " - Outcome: " << (config.report_test_fail ? "FAILED" : "PASSED") << std::endl;
   }
   return config.report_test_fail ? EXIT_FAILURE : EXIT_SUCCESS;
 }

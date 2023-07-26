@@ -120,7 +120,7 @@ global_variables start(parallel_ &parallel, const global_config &config, clover:
     clover::dump(globals, std::to_string(parallel.task) + "_" + std::to_string(globals.step) + "_03_update_halo.txt");
 
   if (parallel.boss) {
-    std::cout << "Problem initialised and generated" << std::endl;
+    std::cout << " Problem initialised and generated" << std::endl;
     g_out << std::endl << "Problem initialised and generated" << std::endl;
   }
 

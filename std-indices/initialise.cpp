@@ -29,10 +29,10 @@ CloverLeaf. If not, see http://www.gnu.org/licenses/.
 #include "initialise.h"
 #include "start.h"
 
-std::pair<clover::context, run_args> create_context(bool silent, const std::vector<std::string> &args) {
+model create_context(bool silent, const std::vector<std::string> &args) {
   auto [_, parsed] = list_and_parse<std::string>(
       silent, {"(default device)"}, [](auto &d) { return d; }, args);
-  return {clover::context{}, parsed};
+  return model{clover::context{}, "C++ PSTL (std-indices)", false, parsed};
 }
 
-void report_context(const clover::context &) { std::cout << "Using C++ PSTL (std-indices)" << std::endl; }
+void report_context(const clover::context &) {}

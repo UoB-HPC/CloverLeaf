@@ -22,7 +22,7 @@
 #include "initialise.h"
 #include "start.h"
 
-std::pair<clover::context, run_args> create_context(bool silent, const std::vector<std::string> &args) {
+model create_context(bool silent, const std::vector<std::string> &args) {
   struct Device {
     int id{};
     std::string name{};
@@ -41,7 +41,7 @@ std::pair<clover::context, run_args> create_context(bool silent, const std::vect
   auto [device, parsed] = list_and_parse<Device>(
       silent, devices, [](auto &d) { return d.name; }, args);
   clover::checkError(hipSetDevice(device.id));
-  return {clover::context{}, parsed};
+  return model{clover::context{}, "HIP", true, parsed};
 }
 
 void report_context(const clover::context &) {
@@ -49,8 +49,6 @@ void report_context(const clover::context &) {
   clover::checkError(hipGetDevice(&device));
   hipDeviceProp_t props{};
   clover::checkError(hipGetDeviceProperties(&props, device));
-
-  std::cout << "Using HIP:" << std::endl;
   std::cout << " - Device: " //
             << props.name << " (" << (props.totalGlobalMem / 1024 / 1024) << "MB;"
             << "gfx" << props.gcnArch << ")" << std::endl;

@@ -66,7 +66,7 @@ template <typename T> struct Buffer2D {
   clover::BufferMirror2D<T> mirrored2() { return {mirrored(), extent<0>(), extent<1>()}; }
 };
 
-template <typename T> using StagingBuffer1D = typename Kokkos::View<T *>::HostMirror &;
+template <typename T> using StagingBuffer1D = T *;
 
 struct chunk_context {
   //  Kokkos::View<double*>::HostMirror hm_left_rcv_buffer, hm_right_rcv_buffer, hm_bottom_rcv_buffer, hm_top_rcv_buffer;

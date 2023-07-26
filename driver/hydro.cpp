@@ -118,7 +118,8 @@ void hydro(global_variables &globals, parallel_ &parallel) {
               << "Clover is finishing" << std::endl
               << "Wall clock " << wall_clock << std::endl
               << "First step overhead " << first_step - second_step << std::endl;
-        std::cout << "Wall clock " << wall_clock << std::endl << "First step overhead " << first_step - second_step << std::endl;
+        std::cout << " Wall clock " << wall_clock << std::endl //
+                  << " First step overhead " << first_step - second_step << std::endl;
       }
 
       std::vector<double> totals(parallel.max_task);
@@ -173,24 +174,24 @@ void hydro(global_variables &globals, parallel_ &parallel) {
         if (parallel.boss) {
           auto writeProfile = [&](auto &stream) {
             stream << std::fixed << std::endl
-                   << "Profiler Output        Time     Percentage" << std::endl
-                   << "Timestep              :" << p.timestep << " " << 100.0 * (p.timestep / wall_clock) << std::endl
-                   << "Ideal Gas             :" << p.ideal_gas << " " << 100.0 * (p.ideal_gas / wall_clock) << std::endl
-                   << "Viscosity             :" << p.viscosity << " " << 100.0 * (p.viscosity / wall_clock) << std::endl
-                   << "PdV                   :" << p.PdV << " " << 100.0 * (p.PdV / wall_clock) << std::endl
-                   << "Revert                :" << p.revert << " " << 100.0 * (p.revert / wall_clock) << std::endl
-                   << "Acceleration          :" << p.acceleration << " " << 100.0 * (p.acceleration / wall_clock) << std::endl
-                   << "Fluxes                :" << p.flux << " " << 100.0 * (p.flux / wall_clock) << std::endl
-                   << "Cell Advection        :" << p.cell_advection << " " << 100.0 * (p.cell_advection / wall_clock) << std::endl
-                   << "Momentum Advection    :" << p.mom_advection << " " << 100.0 * (p.mom_advection / wall_clock) << std::endl
-                   << "Reset                 :" << p.reset << " " << 100.0 * (p.reset / wall_clock) << std::endl
-                   << "Summary               :" << p.summary << " " << 100.0 * (p.summary / wall_clock) << std::endl
-                   << "Visit                 :" << p.visit << " " << 100.0 * (p.visit / wall_clock) << std::endl
-                   << "Tile Halo Exchange    :" << p.tile_halo_exchange << " " << 100.0 * (p.tile_halo_exchange / wall_clock) << std::endl
-                   << "Self Halo Exchange    :" << p.self_halo_exchange << " " << 100.0 * (p.self_halo_exchange / wall_clock) << std::endl
-                   << "MPI Halo Exchange     :" << p.mpi_halo_exchange << " " << 100.0 * (p.mpi_halo_exchange / wall_clock) << std::endl
-                   << "Total                 :" << kernel_total << " " << 100.0 * (kernel_total / wall_clock) << std::endl
-                   << "The Rest              :" << wall_clock - kernel_total << " " << 100.0 * (wall_clock - kernel_total) / wall_clock
+                   << " Profiler Output        Time     Percentage" << std::endl
+                   << " Timestep              :" << p.timestep << " " << 100.0 * (p.timestep / wall_clock) << std::endl
+                   << " Ideal Gas             :" << p.ideal_gas << " " << 100.0 * (p.ideal_gas / wall_clock) << std::endl
+                   << " Viscosity             :" << p.viscosity << " " << 100.0 * (p.viscosity / wall_clock) << std::endl
+                   << " PdV                   :" << p.PdV << " " << 100.0 * (p.PdV / wall_clock) << std::endl
+                   << " Revert                :" << p.revert << " " << 100.0 * (p.revert / wall_clock) << std::endl
+                   << " Acceleration          :" << p.acceleration << " " << 100.0 * (p.acceleration / wall_clock) << std::endl
+                   << " Fluxes                :" << p.flux << " " << 100.0 * (p.flux / wall_clock) << std::endl
+                   << " Cell Advection        :" << p.cell_advection << " " << 100.0 * (p.cell_advection / wall_clock) << std::endl
+                   << " Momentum Advection    :" << p.mom_advection << " " << 100.0 * (p.mom_advection / wall_clock) << std::endl
+                   << " Reset                 :" << p.reset << " " << 100.0 * (p.reset / wall_clock) << std::endl
+                   << " Summary               :" << p.summary << " " << 100.0 * (p.summary / wall_clock) << std::endl
+                   << " Visit                 :" << p.visit << " " << 100.0 * (p.visit / wall_clock) << std::endl
+                   << " Tile Halo Exchange    :" << p.tile_halo_exchange << " " << 100.0 * (p.tile_halo_exchange / wall_clock) << std::endl
+                   << " Self Halo Exchange    :" << p.self_halo_exchange << " " << 100.0 * (p.self_halo_exchange / wall_clock) << std::endl
+                   << " MPI Halo Exchange     :" << p.mpi_halo_exchange << " " << 100.0 * (p.mpi_halo_exchange / wall_clock) << std::endl
+                   << " Total                 :" << kernel_total << " " << 100.0 * (kernel_total / wall_clock) << std::endl
+                   << " The Rest              :" << wall_clock - kernel_total << " " << 100.0 * (wall_clock - kernel_total) / wall_clock
                    << std::endl
                    << std::endl;
           };
@@ -208,14 +209,14 @@ void hydro(global_variables &globals, parallel_ &parallel) {
       wall_clock = timer() - timerstart;
       double step_clock = timer() - step_time;
       g_out << "Wall clock " << wall_clock << std::endl;
-      std::cout << "Wall clock " << wall_clock << std::endl;
+      std::cout << " Wall clock " << wall_clock << std::endl;
       double cells = globals.config.grid.x_cells * globals.config.grid.y_cells;
       double rstep = globals.step;
       double grind_time = wall_clock / (rstep * cells);
       double step_grind = step_clock / cells;
-      std::cout << "Average time per cell " << grind_time << std::endl;
+      std::cout << " Average time per cell " << grind_time << std::endl;
       g_out << "Average time per cell " << grind_time << std::endl;
-      std::cout << "Step time per cell    " << step_grind << std::endl;
+      std::cout << "  Step time per cell    " << step_grind << std::endl;
       g_out << "Step time per cell    " << step_grind << std::endl;
     }
   }

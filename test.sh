@@ -11,7 +11,7 @@ export CPU_RANKS=16
 export GPU_RANKS=3
 
 VERBOSE="ON"
-PROBLEM="InputDecks/clover_bm16_short.in"
+PROBLEM="InputDecks/clover_bm_short.in"
 
 function test() {
   rm -rf "build_$3" # /CMakeCache.txt
@@ -27,13 +27,14 @@ function test() {
   mkdir -p out
 
   which mpirun
-  mpirun -np "$1" sh -c "  build_$3/*-cloverleaf --device $2 --file $PROBLEM"
+  #  ldd build_$3/*-cloverleaf
+  mpirun -np "$1" -bind-to core -map-by core sh -c " build_$3/*-cloverleaf --device $2 --file $PROBLEM --profile true"
   # --mca pml ucx -x UCX_TLS=rc,sm,cuda_copy,gdr_copy,cuda_ipc
   # konsole -e gdb -ex run --args
 }
 
 function test_nompi() {
-  rm -rf "build_$2" #/CMakeCache.txt
+  rm -rf "build_$2" # /CMakeCache.txt
   echo "$2" "${@:3}"
   cmake -DCMAKE_BUILD_TYPE=Release -S. -B "build_$2" -GNinja -DCMAKE_VERBOSE_MAKEFILE=$VERBOSE -DENABLE_MPI=OFF -DMODEL="$2" "${@:3}" # &>/dev/null
   cmake --build "build_$2"                                                                                                            # &>/dev/null
@@ -45,7 +46,7 @@ function test_nompi() {
   # | grep -i -e "This run" -e "Timestep *" #
   export ASAN_OPTIONS=detect_leaks=0
   mkdir -p out
-  build_$2/*-cloverleaf --device "$1" --file "$PROBLEM"
+  build_$2/*-cloverleaf --device "$1" --file "$PROBLEM" --profile true
 }
 
 ( 
@@ -70,7 +71,7 @@ function test_nompi() {
   (
     :
     test_nompi "0" omp-target -DCMAKE_CXX_COMPILER=clang++ -DOFFLOAD=NVIDIA:sm_60 -DCXX_EXTRA_FLAGS="-Ofast;--cuda-path=$CUDA_DIR"
-    test_nompi "0" omp-target -DCMAKE_CXX_COMPILER=nvc++ -DCXX_EXTRA_FLAGS="-Ofast"
+    test_nompi "0" omp-target -DCMAKE_CXX_COMPILER=nvc++ -DCXX_EXTRA_FLAGS="-Ofast" -DOFFLOAD=ON -DOFFLOAD_FLAGS="-mp;-gpu=cc60"
   )
   (
     :
@@ -87,14 +88,13 @@ function test_nompi() {
   )
   (
     :
-    test_nompi "0" hip -DCXX_EXTRA_FLAGS="-Ofast" -DCMAKE_CXX_COMPILER=/usr/lib/aomp_17.0-1/bin/hipcc
-    test_nompi "0" hip -DMANAGED_ALLOC=ON -DCXX_EXTRA_FLAGS="-O3" -DCMAKE_CXX_COMPILER=/usr/lib/aomp_17.0-1/bin/hipcc # fails at Ofast
-    test_nompi "0" hip -DSYNC_ALL_KERNELS=ON -DCXX_EXTRA_FLAGS="-Ofast" -DCMAKE_CXX_COMPILER=/usr/lib/aomp_17.0-1/bin/hipcc
+    test_nompi "0" hip -DCXX_EXTRA_FLAGS="-O1" -DCMAKE_CXX_COMPILER=hipcc
+    test_nompi "0" hip -DMANAGED_ALLOC=ON -DCXX_EXTRA_FLAGS="-O1" -DCMAKE_CXX_COMPILER=hipcc # fails validation at > O1 lol
+    test_nompi "0" hip -DSYNC_ALL_KERNELS=ON -DCXX_EXTRA_FLAGS="-Ofast" -DCMAKE_CXX_COMPILER=hipcc
   )
   wait
 )
-##exit 0
-#
+#exit 0
 (
   module load mpi
   #  #  test $CPU_RANKS "0" serial   -DCMAKE_CXX_COMPILER=g++
@@ -116,7 +116,7 @@ function test_nompi() {
   (
     :
     test $GPU_RANKS "0" omp-target -DCMAKE_CXX_COMPILER=clang++ -DOFFLOAD=NVIDIA:sm_60 -DCXX_EXTRA_FLAGS="-Ofast;--cuda-path=$CUDA_DIR"
-    test $CPU_RANKS "0" omp-target -DCMAKE_CXX_COMPILER=nvc++ -DCXX_EXTRA_FLAGS="-Ofast" -DOFFLOAD=ON -DOFFLOAD_FLAGS="-mp;-gpu=cc60"
+    test $GPU_RANKS "0" omp-target -DCMAKE_CXX_COMPILER=nvc++ -DCXX_EXTRA_FLAGS="-Ofast" -DOFFLOAD=ON -DOFFLOAD_FLAGS="-mp;-gpu=cc60"
   )
   (
     :
@@ -132,37 +132,27 @@ function test_nompi() {
   )
   (
     :
-    test $GPU_RANKS "0" hip -DMANAGED_ALLOC=ON -DCXX_EXTRA_FLAGS="-Ofast" -DCMAKE_CXX_COMPILER=/usr/lib/aomp_17.0-1/bin/hipcc
-    test $GPU_RANKS "0" hip -DMANAGED_ALLOC=ON -DSYNC_ALL_KERNELS=ON -DCXX_EXTRA_FLAGS="-Ofast" -DCMAKE_CXX_COMPILER=/usr/lib/aomp_17.0-1/bin/hipcc
+    test $GPU_RANKS "0" hip -DMANAGED_ALLOC=ON -DCXX_EXTRA_FLAGS="-O1" -DCMAKE_CXX_COMPILER=hipcc # fails validation at > O1 lol
+    test $GPU_RANKS "0" hip -DMANAGED_ALLOC=ON -DSYNC_ALL_KERNELS=ON -DCXX_EXTRA_FLAGS="-O1" -DCMAKE_CXX_COMPILER=hipcc
   )
   wait
 )
-
-(
-  module use /opt/nvidia/hpc_sdk/modulefiles
-  module load nvhpc
-  test $GPU_RANKS "0" hip -DCXX_EXTRA_FLAGS="-Ofast" -DCMAKE_CXX_COMPILER=/usr/lib/aomp_17.0-1/bin/hipcc
-  test $GPU_RANKS "0" cuda -DCXX_EXTRA_FLAGS="-Ofast" -DCMAKE_CUDA_COMPILER=nvcc -DCUDA_ARCH=sm_60
-)
-##exit 0
-##
+#exit 0
+#
 (
   set +eu
-  #  #  source /opt/intel/oneapi/setvars.sh
-  #  #  source  /opt/intel/oneapi/mpi/2021.9.0/env/vars.sh
   module load mpi
   source /opt/intel/oneapi/tbb/2021.10.0/env/vars.sh
   source /opt/intel/oneapi/compiler/2023.2.0/env/vars.sh
   set -eu
   export DPCPP_CPU_NUM_CUS=1
   export DPCPP_CPU_SCHEDULE=static
-  test $CPU_RANKS "AMD" sycl-acc -DSYCL_COMPILER=ONEAPI-ICPX
-  test $CPU_RANKS "AMD" sycl-usm -DSYCL_COMPILER=ONEAPI-ICPX
+  test $CPU_RANKS "Ryzen" sycl-acc -DSYCL_COMPILER=ONEAPI-ICPX
+  test $CPU_RANKS "Ryzen" sycl-usm -DSYCL_COMPILER=ONEAPI-ICPX
 )
 
 (
   set +eu
-  #source /opt/intel/oneapi/setvars.sh --include-intel-llvm
   module load mpi
   source /opt/intel/oneapi/tbb/2021.10.0/env/vars.sh
   source /opt/intel/oneapi/compiler/2023.2.0/env/vars.sh --include-intel-llvm
@@ -178,5 +168,42 @@ function test_nompi() {
   test $GPU_RANKS "0" std-indices -DCMAKE_CXX_COMPILER=clang++ -DUSE_ONEDPL=DPCPP -DCXX_EXTRA_FLAGS="-fsycl;$hip_sycl_flags"
   test $GPU_RANKS "Radeon" sycl-acc -DSYCL_COMPILER=ONEAPI-Clang -DSYCL_COMPILER_DIR=/opt/intel/oneapi/compiler/2023.1.0/linux/bin-llvm/ -DCXX_EXTRA_FLAGS="$hip_sycl_flags" -DCXX_EXTRA_LINK_FLAGS="$hip_sycl_flags"
   test $GPU_RANKS "Radeon" sycl-usm -DSYCL_COMPILER=ONEAPI-Clang -DSYCL_COMPILER_DIR=/opt/intel/oneapi/compiler/2023.1.0/linux/bin-llvm/ -DCXX_EXTRA_FLAGS="$hip_sycl_flags" -DCXX_EXTRA_LINK_FLAGS="$hip_sycl_flags"
+)
+
+### CUDA-aware MPI ###
+(
+  export MPI_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/comm_libs/openmpi/openmpi-3.1.5/
+  export PATH="/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/comm_libs/openmpi/openmpi-3.1.5/bin/:${PATH:-}"
+  (
+    :
+    test $GPU_RANKS "0" std-indices -DCMAKE_CXX_COMPILER=nvc++ -DCXX_EXTRA_FLAGS="-Ofast;-stdpar;-gpu=cc61;--restrict"
+    test $GPU_RANKS "0" omp-target -DCMAKE_CXX_COMPILER=clang++ -DOFFLOAD=NVIDIA:sm_60 -DCXX_EXTRA_FLAGS="-Ofast;--cuda-path=$CUDA_DIR"
+    test $GPU_RANKS "0" omp-target -DCMAKE_CXX_COMPILER=nvc++ -DCXX_EXTRA_FLAGS="-Ofast" -DOFFLOAD=ON -DOFFLOAD_FLAGS="-mp;-gpu=cc60"
+    test $GPU_RANKS "0" kokkos -DCMAKE_CXX_COMPILER=$KOKKOS_DIR/bin/nvcc_wrapper -DKOKKOS_IN_TREE="$KOKKOS_DIR" -DKokkos_ENABLE_CUDA=ON -DKokkos_ARCH_PASCAL61=ON
+    test $GPU_RANKS "0" kokkos -DCMAKE_CXX_COMPILER=nvc++ -DKOKKOS_IN_TREE="$KOKKOS_DIR" -DKokkos_ENABLE_CUDA=ON -DKokkos_ARCH_PASCAL61=ON
+    test $GPU_RANKS "0" cuda -DCXX_EXTRA_FLAGS="-Ofast" -DCMAKE_CUDA_COMPILER=nvcc -DCUDA_ARCH=sm_60
+
+    #    test $GPU_RANKS "0" hip  -DCXX_EXTRA_FLAGS="-Ofast" -DCMAKE_CXX_COMPILER=/usr/lib/aomp_17.0-1/bin/hipcc # doesn't work with NVHPC'S OpenMPI, segfaults at runtime
+
+  )
+
+  (
+    :
+    set +eu
+    source /opt/intel/oneapi/tbb/2021.10.0/env/vars.sh
+    source /opt/intel/oneapi/compiler/2023.2.0/env/vars.sh --include-intel-llvm
+    set -eu
+    cuda_sycl_flags="-fsycl-targets=nvptx64-nvidia-cuda;-Xsycl-target-backend;--cuda-gpu-arch=sm_60;--cuda-path=$CUDA_DIR"
+    test $GPU_RANKS "0" std-indices -DCMAKE_CXX_COMPILER=clang++ -DUSE_ONEDPL=DPCPP -DCXX_EXTRA_FLAGS="-fsycl;$cuda_sycl_flags"
+    test $GPU_RANKS "NVIDIA" sycl-acc -DSYCL_COMPILER=ONEAPI-Clang -DSYCL_COMPILER_DIR=/opt/intel/oneapi/compiler/2023.1.0/linux/bin-llvm/ -DCXX_EXTRA_FLAGS="$cuda_sycl_flags" -DCXX_EXTRA_LINK_FLAGS="$cuda_sycl_flags"
+    test $GPU_RANKS "NVIDIA" sycl-usm -DSYCL_COMPILER=ONEAPI-Clang -DSYCL_COMPILER_DIR=/opt/intel/oneapi/compiler/2023.1.0/linux/bin-llvm/ -DCXX_EXTRA_FLAGS="$cuda_sycl_flags" -DCXX_EXTRA_LINK_FLAGS="$cuda_sycl_flags"
+
+    export LD_LIBRARY_PATH=/opt/rocm-5.4.3/lib:${LD_LIBRARY_PATH:-}
+    hip_sycl_flags="-fsycl;-fsycl-targets=amdgcn-amd-amdhsa;-Xsycl-target-backend;--offload-arch=gfx1012"
+    test $GPU_RANKS "0" std-indices -DCMAKE_CXX_COMPILER=clang++ -DUSE_ONEDPL=DPCPP -DCXX_EXTRA_FLAGS="-fsycl;$hip_sycl_flags;-O1" # again, needs -O1
+    test $GPU_RANKS "Radeon" sycl-acc -DSYCL_COMPILER=ONEAPI-Clang -DSYCL_COMPILER_DIR=/opt/intel/oneapi/compiler/2023.1.0/linux/bin-llvm/ -DCXX_EXTRA_FLAGS="$hip_sycl_flags" -DCXX_EXTRA_LINK_FLAGS="$hip_sycl_flags"
+    test $GPU_RANKS "Radeon" sycl-usm -DSYCL_COMPILER=ONEAPI-Clang -DSYCL_COMPILER_DIR=/opt/intel/oneapi/compiler/2023.1.0/linux/bin-llvm/ -DCXX_EXTRA_FLAGS="$hip_sycl_flags" -DCXX_EXTRA_LINK_FLAGS="$hip_sycl_flags"
+  )
+
 )
 echo "All done!"

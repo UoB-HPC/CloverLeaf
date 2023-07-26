@@ -37,6 +37,13 @@ struct run_args {
   std::optional<bool> profile;
 };
 
+struct model {
+  clover::context context;
+  std::string name;
+  bool offload;
+  run_args args;
+};
+
 template <typename T>
 std::pair<T, run_args> list_and_parse(bool silent, const std::vector<T> &devices,              //
                                       const std::function<std::string(const T &)> &deviceName, //
@@ -49,14 +56,14 @@ std::pair<T, run_args> list_and_parse(bool silent, const std::vector<T> &devices
     std::cout //
         << "Usage: " << name << " [OPTIONS]\n\n"
         << "Options:\n"
-        << "  -h  --help                             Print the message\n"
+        << "  -h  --help                             Print this message\n"
         << "      --list                             List available devices with index and exit\n"
         << "      --device           <INDEX|NAME>    Use device at INDEX from output of --list or substring match iff INDEX is not an id\n"
         << "      --file,--in              <FILE>    Custom clover.in file FILE (defaults to clover.in if unspecified)\n"
         << "      --out                    <FILE>    Custom clover.out file FILE (defaults to clover.out if unspecified)\n"
         << "      --dump                    <DIR>    Dumps all field data in ASCII to ./DIR for debugging, DIR is created if missing\n"
         << "      --profile                          Enables kernel profiling, this takes precedence over the profiler_on in clover.in\n"
-        << "      --staging-buffer <true|false|auto> If true, use a host staging buffer for device-host MPI halo exchange."
+        << "      --staging-buffer <true|false|auto> If true, use a host staging buffer for device-host MPI halo exchange.\n"
            "                                         If false, use device pointers directly for MPI halo exchange.\n"
         << "                                         Defaults to auto which elides the buffer if a device-aware (i.e CUDA-aware) is used.\n"
         << "                                         This option is no-op for CPU-only models.\n"
@@ -78,7 +85,7 @@ std::pair<T, run_args> list_and_parse(bool silent, const std::vector<T> &devices
     if (silent) return;
     std::cout << "Devices:" << std::endl;
     for (size_t j = 0; j < devices.size(); ++j)
-      std::cout << std::setw(3) << j << ". " << deviceName(devices[j]) << std::endl;
+      std::cout << " " << j << ": " << deviceName(devices[j]) << std::endl;
   };
 
   T device = std::move(devices[0]);
@@ -103,8 +110,8 @@ std::pair<T, run_args> list_and_parse(bool silent, const std::vector<T> &devices
           device = devices.at(std::stoul(param));
         } catch (const std::exception &e) {
           if (!silent) {
-            std::cout << "Unable to parse/select device index `" << param << "`:" << e.what() << std::endl;
-            std::cout << "Attempting to match device with substring  `" << param << "`" << std::endl;
+            std::cout << "# Unable to parse/select device index `" << param << "`:" << e.what() << std::endl;
+            std::cout << "# Attempting to match device with substring  `" << param << "`" << std::endl;
           }
 
           auto matching = std::find_if(devices.begin(), devices.end(),
@@ -112,10 +119,10 @@ std::pair<T, run_args> list_and_parse(bool silent, const std::vector<T> &devices
           if (matching != devices.end()) {
             device = *matching;
             if (!silent) {
-              std::cout << "Using first device matching substring `" << param << "`" << std::endl;
+              std::cout << "# Using first device matching substring `" << param << "`" << std::endl;
             }
           } else if (devices.size() == 1)
-            std::cerr << "No matching device but there's only one device, will be using that anyway" << std::endl;
+            std::cerr << "# No matching device but there's only one device, will be using that anyway" << std::endl;
           else {
             std::cerr << "No matching devices" << std::endl;
             std::exit(EXIT_FAILURE);
@@ -144,7 +151,7 @@ std::pair<T, run_args> list_and_parse(bool silent, const std::vector<T> &devices
   return {device, config};
 }
 
-std::pair<clover::context, run_args> create_context(bool silent, const std::vector<std::string> &args);
+model create_context(bool silent, const std::vector<std::string> &args);
 
 void report_context(const clover::context &ctx);
 

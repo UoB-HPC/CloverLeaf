@@ -108,6 +108,8 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
   double *bottom_rcv = bottom_rcv_buffer.data;
   double *bottom_snd = bottom_snd_buffer.data;
 
+  bool stage = globals.config.staging_buffer;
+
 #pragma omp target enter data map(alloc : left_rcv[ : left_rcv_buffer.N()]) map(alloc : left_snd[ : left_snd_buffer.N()])                  \
     map(alloc : right_rcv[ : right_rcv_buffer.N()]) map(alloc : right_snd[ : right_snd_buffer.N()])                                        \
     map(alloc : top_rcv[ : top_rcv_buffer.N()]) map(alloc : top_snd[ : top_snd_buffer.N()])                                                \
@@ -123,8 +125,9 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     }
 
     // send and recv messages to the left
-#pragma omp target update from(left_snd[ : left_snd_buffer.N()])
-    clover_send_recv_message_left(globals, left_snd_buffer, left_rcv_buffer, end_pack_index_left_right, 1, 2, request[message_count],
+#pragma omp target update if (stage) from(left_snd[ : left_snd_buffer.N()])
+#pragma omp target data if (!stage) use_device_ptr(left_snd, left_rcv)
+    clover_send_recv_message_left(globals, left_snd, left_rcv, end_pack_index_left_right, 1, 2, request[message_count],
                                   request[message_count + 1]);
     message_count += 2;
   }
@@ -138,8 +141,9 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     }
 
     // send message to the right
-#pragma omp target update from(right_snd[ : right_snd_buffer.N()])
-    clover_send_recv_message_right(globals, right_snd_buffer, right_rcv_buffer, end_pack_index_left_right, 2, 1, request[message_count],
+#pragma omp target update if (stage) from(right_snd[ : right_snd_buffer.N()])
+#pragma omp target data if (!stage) use_device_ptr(right_snd, right_rcv)
+    clover_send_recv_message_right(globals, right_snd, right_rcv, end_pack_index_left_right, 2, 1, request[message_count],
                                    request[message_count + 1]);
     message_count += 2;
   }
@@ -151,7 +155,7 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
 
   // unpack in left direction
   if (globals.chunk.chunk_neighbours[chunk_left] != external_face) {
-#pragma omp target update to(left_rcv[ : left_rcv_buffer.N()])
+#pragma omp target update if (stage) to(left_rcv[ : left_rcv_buffer.N()])
     for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {
       if (globals.chunk.tiles[tile].info.external_tile_mask[tile_left] == 1) {
         clover_unpack_left(globals, left_rcv_buffer, fields, tile, depth, left_right_offset);
@@ -161,7 +165,7 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
 
   // unpack in right direction
   if (globals.chunk.chunk_neighbours[chunk_right] != external_face) {
-#pragma omp target update to(right_rcv[ : right_rcv_buffer.N()])
+#pragma omp target update if (stage) to(right_rcv[ : right_rcv_buffer.N()])
     for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {
       if (globals.chunk.tiles[tile].info.external_tile_mask[tile_right] == 1) {
         clover_unpack_right(globals, right_rcv_buffer, fields, tile, depth, left_right_offset);
@@ -182,8 +186,9 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     }
 
     // send message downwards
-#pragma omp target update from(bottom_snd[ : bottom_snd_buffer.N()])
-    clover_send_recv_message_bottom(globals, bottom_snd_buffer, bottom_rcv_buffer, end_pack_index_bottom_top, 3, 4, request[message_count],
+#pragma omp target update if (stage) from(bottom_snd[ : bottom_snd_buffer.N()])
+#pragma omp target data if (!stage) use_device_ptr(bottom_snd, bottom_rcv)
+    clover_send_recv_message_bottom(globals, bottom_snd, bottom_rcv, end_pack_index_bottom_top, 3, 4, request[message_count],
                                     request[message_count + 1]);
     message_count += 2;
   }
@@ -197,8 +202,9 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     }
 
     // send message upwards
-#pragma omp target update from(top_snd[ : top_snd_buffer.N()])
-    clover_send_recv_message_top(globals, top_snd_buffer, top_rcv_buffer, end_pack_index_bottom_top, 4, 3, request[message_count],
+#pragma omp target update if (stage) from(top_snd[ : top_snd_buffer.N()])
+#pragma omp target data if (!stage) use_device_ptr(top_snd, top_rcv)
+    clover_send_recv_message_top(globals, top_snd, top_rcv, end_pack_index_bottom_top, 4, 3, request[message_count],
                                  request[message_count + 1]);
     message_count += 2;
   }
@@ -210,7 +216,7 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
 
   // unpack in top direction
   if (globals.chunk.chunk_neighbours[chunk_top] != external_face) {
-#pragma omp target update to(top_rcv[ : top_rcv_buffer.N()])
+#pragma omp target update to(top_rcv[ : top_rcv_buffer.N()]) if (stage)
     for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {
       if (globals.chunk.tiles[tile].info.external_tile_mask[tile_top] == 1) {
         clover_unpack_top(globals, top_rcv_buffer, fields, tile, depth, bottom_top_offset);
@@ -220,7 +226,7 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
 
   // unpack in bottom direction
   if (globals.chunk.chunk_neighbours[chunk_bottom] != external_face) {
-#pragma omp target update to(bottom_rcv[ : bottom_rcv_buffer.N()])
+#pragma omp target update to(bottom_rcv[ : bottom_rcv_buffer.N()]) if (stage)
     for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {
       if (globals.chunk.tiles[tile].info.external_tile_mask[tile_bottom] == 1) {
         clover_unpack_bottom(globals, bottom_rcv_buffer, fields, tile, depth, bottom_top_offset);
@@ -233,31 +239,27 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     map(release : bottom_snd[ : 0])
 }
 
-void clover_send_recv_message_left(global_variables &globals, clover::Buffer1D<double> &left_snd_buffer,
-                                   clover::Buffer1D<double> &left_rcv_buffer, int total_size, int tag_send, int tag_recv,
-                                   MPI_Request &req_send, MPI_Request &req_recv) {
+void clover_send_recv_message_left(global_variables &globals, double *left_snd_buffer, double *left_rcv_buffer, int total_size,
+                                   int tag_send, int tag_recv, MPI_Request &req_send, MPI_Request &req_recv) {
   int left_task = globals.chunk.chunk_neighbours[chunk_left] - 1;
-  MPI_Isend(left_snd_buffer.data, total_size, MPI_DOUBLE, left_task, tag_send, MPI_COMM_WORLD, &req_send);
-  MPI_Irecv(left_rcv_buffer.data, total_size, MPI_DOUBLE, left_task, tag_recv, MPI_COMM_WORLD, &req_recv);
+  MPI_Isend(left_snd_buffer, total_size, MPI_DOUBLE, left_task, tag_send, MPI_COMM_WORLD, &req_send);
+  MPI_Irecv(left_rcv_buffer, total_size, MPI_DOUBLE, left_task, tag_recv, MPI_COMM_WORLD, &req_recv);
 }
-void clover_send_recv_message_right(global_variables &globals, clover::Buffer1D<double> &right_snd_buffer,
-                                    clover::Buffer1D<double> &right_rcv_buffer, int total_size, int tag_send, int tag_recv,
-                                    MPI_Request &req_send, MPI_Request &req_recv) {
+void clover_send_recv_message_right(global_variables &globals, double *right_snd_buffer, double *right_rcv_buffer, int total_size,
+                                    int tag_send, int tag_recv, MPI_Request &req_send, MPI_Request &req_recv) {
   int right_task = globals.chunk.chunk_neighbours[chunk_right] - 1;
-  MPI_Isend(right_snd_buffer.data, total_size, MPI_DOUBLE, right_task, tag_send, MPI_COMM_WORLD, &req_send);
-  MPI_Irecv(right_rcv_buffer.data, total_size, MPI_DOUBLE, right_task, tag_recv, MPI_COMM_WORLD, &req_recv);
+  MPI_Isend(right_snd_buffer, total_size, MPI_DOUBLE, right_task, tag_send, MPI_COMM_WORLD, &req_send);
+  MPI_Irecv(right_rcv_buffer, total_size, MPI_DOUBLE, right_task, tag_recv, MPI_COMM_WORLD, &req_recv);
 }
-void clover_send_recv_message_top(global_variables &globals, clover::Buffer1D<double> &top_snd_buffer,
-                                  clover::Buffer1D<double> &top_rcv_buffer, int total_size, int tag_send, int tag_recv,
-                                  MPI_Request &req_send, MPI_Request &req_recv) {
+void clover_send_recv_message_top(global_variables &globals, double *top_snd_buffer, double *top_rcv_buffer, int total_size, int tag_send,
+                                  int tag_recv, MPI_Request &req_send, MPI_Request &req_recv) {
   int top_task = globals.chunk.chunk_neighbours[chunk_top] - 1;
-  MPI_Isend(top_snd_buffer.data, total_size, MPI_DOUBLE, top_task, tag_send, MPI_COMM_WORLD, &req_send);
-  MPI_Irecv(top_rcv_buffer.data, total_size, MPI_DOUBLE, top_task, tag_recv, MPI_COMM_WORLD, &req_recv);
+  MPI_Isend(top_snd_buffer, total_size, MPI_DOUBLE, top_task, tag_send, MPI_COMM_WORLD, &req_send);
+  MPI_Irecv(top_rcv_buffer, total_size, MPI_DOUBLE, top_task, tag_recv, MPI_COMM_WORLD, &req_recv);
 }
-void clover_send_recv_message_bottom(global_variables &globals, clover::Buffer1D<double> &bottom_snd_buffer,
-                                     clover::Buffer1D<double> &bottom_rcv_buffer, int total_size, int tag_send, int tag_recv,
-                                     MPI_Request &req_send, MPI_Request &req_recv) {
+void clover_send_recv_message_bottom(global_variables &globals, double *bottom_snd_buffer, double *bottom_rcv_buffer, int total_size,
+                                     int tag_send, int tag_recv, MPI_Request &req_send, MPI_Request &req_recv) {
   int bottom_task = globals.chunk.chunk_neighbours[chunk_bottom] - 1;
-  MPI_Isend(bottom_snd_buffer.data, total_size, MPI_DOUBLE, bottom_task, tag_send, MPI_COMM_WORLD, &req_send);
-  MPI_Irecv(bottom_rcv_buffer.data, total_size, MPI_DOUBLE, bottom_task, tag_recv, MPI_COMM_WORLD, &req_recv);
+  MPI_Isend(bottom_snd_buffer, total_size, MPI_DOUBLE, bottom_task, tag_send, MPI_COMM_WORLD, &req_send);
+  MPI_Irecv(bottom_rcv_buffer, total_size, MPI_DOUBLE, bottom_task, tag_recv, MPI_COMM_WORLD, &req_recv);
 }

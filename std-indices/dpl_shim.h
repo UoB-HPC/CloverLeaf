@@ -22,10 +22,6 @@
 #include <cstddef>
 #include <cstdlib>
 
-#ifndef ALIGNMENT
-  #define ALIGNMENT (2 * 1024 * 1024) // 2MB
-#endif
-
 #ifdef USE_ONEDPL
 
 // oneDPL C++17 PSTL
@@ -71,8 +67,8 @@ static constexpr auto EXEC_POLICY = std::execution::par_unseq;
 
 #ifdef USE_STD_PTR_ALLOC_DEALLOC
 
-template <typename T> T *alloc_raw(size_t size) { return (T *)aligned_alloc(ALIGNMENT, sizeof(T) * size); }
+template <typename T> T *alloc_raw(size_t size) { return static_cast<T *>(std::malloc(size * sizeof(T))); }
 
-template <typename T> void dealloc_raw(T *ptr) { free(ptr); }
+template <typename T> void dealloc_raw(T *ptr) { std::free(ptr); }
 
 #endif

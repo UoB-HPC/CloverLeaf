@@ -32,17 +32,21 @@
 
 #include <fstream>
 
-std::pair<clover::context, run_args> create_context(bool silent, const std::vector<std::string> &args) {
+model create_context(bool silent, const std::vector<std::string> &args) {
   if (!Kokkos::is_initialized()) {
     Kokkos::initialize();
   }
   auto [_, parsed] = list_and_parse<std::string>(
       silent, {typeid(Kokkos::DefaultExecutionSpace).name()}, [](auto &d) { return d; }, args);
-  return {clover::context{}, parsed};
+
+  auto name = "Kokkos " + std::to_string(KOKKOS_VERSION / 10000) + "." + std::to_string(KOKKOS_VERSION / 100 % 100) + "." +
+              std::to_string(KOKKOS_VERSION % 100);
+
+  auto host = std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::DefaultHostExecutionSpace>;
+  return model{clover::context{}, name, !host, parsed};
 }
 
 void report_context(const clover::context &) {
-  std::cout << "Using Kokkos " << (KOKKOS_VERSION / 10000) << "." << (KOKKOS_VERSION / 100 % 100) << "." << (KOKKOS_VERSION % 100)
-            << std::endl;
-  std::cout << " - Backend: " << typeid(Kokkos::DefaultExecutionSpace).name() << std::endl;
+  std::cout << " - Backend space: " << typeid(Kokkos::DefaultExecutionSpace).name() << std::endl;
+  std::cout << " - Backend host space: " << typeid(Kokkos::DefaultHostExecutionSpace).name() << std::endl;
 }

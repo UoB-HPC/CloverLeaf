@@ -31,10 +31,10 @@
 #include <sstream>
 #include <string>
 
-std::pair<clover::context, run_args> create_context(bool silent, const std::vector<std::string> &args) {
-  auto [_, parsed] = list_and_parse<std::string>(silent,
-      {"Host CPU"}, [](const auto &d) { return d; }, args);
-  return {clover::context{}, parsed};
+model create_context(bool silent, const std::vector<std::string> &args) {
+  auto [_, parsed] = list_and_parse<std::string>(
+      silent, {"Host CPU"}, [](const auto &d) { return d; }, args);
+  return {clover::context{}, "OpenMP (CPU)", false, parsed};
 }
 
-void report_context(const clover::context &) { std::cout << "Using OpenMP (CPU)" << std::endl; }
+void report_context(const clover::context &) {}

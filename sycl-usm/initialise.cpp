@@ -31,7 +31,7 @@
 #include <sstream>
 #include <string>
 
-std::pair<clover::context, run_args> create_context(bool silent, const std::vector<std::string> &args) {
+model create_context(bool silent, const std::vector<std::string> &args) {
   const auto &devices = sycl::device::get_devices();
   auto [device, parsed] = list_and_parse<sycl::device>(
       silent, devices, [](const auto &d) { return d.template get_info<sycl::info::device::name>(); }, args);
@@ -44,7 +44,8 @@ std::pair<clover::context, run_args> create_context(bool silent, const std::vect
       }
     }
   };
-  return {clover::context{sycl::queue(device, handler, {})}, parsed};
+  auto offload = device.get_info<sycl::info::device::device_type>() == sycl::info::device_type::gpu;
+  return {clover::context{sycl::queue(device, handler, {})}, "SYCL (accessors)", offload, parsed};
 }
 
 static std::string deviceName(sycl::info::device_type type) {
@@ -61,7 +62,6 @@ static std::string deviceName(sycl::info::device_type type) {
 }
 
 void report_context(const clover::context &ctx) {
-  std::cout << "Using SYCL (usm)" << std::endl;
 #if RANGE2D_MODE == RANGE2D_NORMAL
   std::cout << " - Indexing: RANGE2D_NORMAL" << std::endl;
 #elif RANGE2D_MODE == RANGE2D_LINEAR
@@ -71,10 +71,9 @@ void report_context(const clover::context &ctx) {
 #else
   #error "Unsupported RANGE2D_MODE"
 #endif
-  std::cout << " - SYCL device: " << std::endl;
-  std::cout << " Device    : " << ctx.queue.get_device().get_info<sycl::info::device::name>()
-            << " \n\tType    : " << deviceName(ctx.queue.get_device().get_info<sycl::info::device::device_type>())
-            << " \n\tVersion : " << ctx.queue.get_device().get_info<sycl::info::device::version>()
-            << " \n\tVendor  : " << ctx.queue.get_device().get_info<sycl::info::device::vendor>()
-            << " \n\tDriver  : " << ctx.queue.get_device().get_info<sycl::info::device::driver_version>() << std::endl;
+  std::cout << " - SYCL device: " << ctx.queue.get_device().get_info<sycl::info::device::name>() << "\n"
+            << "   - Type    : " << deviceName(ctx.queue.get_device().get_info<sycl::info::device::device_type>()) << "\n"
+            << "   - Version : " << ctx.queue.get_device().get_info<sycl::info::device::version>() << "\n"
+            << "   - Vendor  : " << ctx.queue.get_device().get_info<sycl::info::device::vendor>() << "\n"
+            << "   - Driver  : " << ctx.queue.get_device().get_info<sycl::info::device::driver_version>() << std::endl;
 }

@@ -16,9 +16,9 @@ include(FetchContent)
 #set(MODEL hip)
 ######
 
-#if (NOT MODEL)
-#    set(MODEL std-indices)
-#    #    set(NVHPC_OFFLOAD cc60)
+if (NOT MODEL)
+    set(MODEL std-indices)
+    #    set(NVHPC_OFFLOAD cc60)
 #        set(CXX_EXTRA_FLAGS
 #                -stdpar
 #                -gpu=cc61
@@ -27,9 +27,9 @@ include(FetchContent)
 #                -Ktrap=none
 #                -Minfo=accel
 #                -Minfo=stdpar)
-##    set(USE_TBB ON)
-#    set(ENABLE_MPI ON)
-#endif ()
+    set(USE_TBB ON)
+    set(ENABLE_MPI ON)
+endif ()
 
 #if (NOT MODEL)
 #    set(MODEL hip)
@@ -66,18 +66,21 @@ include(FetchContent)
 #if (NOT MODEL)
 #    set(MODEL omp-target)
 #    set(ENABLE_MPI ON)
+##    set(CXX_EXTRA_FLAGS -fopenmp -foffload=nvptx-none -foffload=-lm -fno-fast-math -fno-associative-math)
+##    set(CXX_EXTRA_LINK_FLAGS -fopenmp -foffload=nvptx-none -foffload=-lm -fno-fast-math -fno-associative-math)
+#    set(CXX_EXTRA_LIBRARIES atomic)
 #    set(MPI_HOME /usr/lib64/openmpi/)
 #endif ()
 
 ########
 ######
-if (NOT MODEL)
-    set(MODEL cuda)
-    set(CMAKE_CUDA_COMPILER /opt/nvidia/hpc_sdk/Linux_x86_64/23.3/compilers/bin/nvcc)
-    set(CUDA_ARCH sm_60)
-    set(ENABLE_PROFILING ON)
-    set(MPI_HOME /usr/lib64/openmpi/)
-endif ()
+#if (NOT MODEL)
+#    set(MODEL cuda)
+#    set(CMAKE_CUDA_COMPILER /opt/nvidia/hpc_sdk/Linux_x86_64/23.3/compilers/bin/nvcc)
+#    set(CUDA_ARCH sm_60)
+#    set(ENABLE_PROFILING ON)
+#    set(MPI_HOME /usr/lib64/openmpi/)
+#endif ()
 
 ######
 #set(MODEL sycl)
@@ -191,7 +194,7 @@ if (USE_ONEDPL)
     FetchContent_Declare(
             oneDPL
             GIT_REPOSITORY https://github.com/oneapi-src/oneDPL.git
-            GIT_TAG oneDPL-2022.1.0-rc3
+            GIT_TAG oneDPL-2022.2.0-rc1
     )
     string(TOLOWER ${USE_ONEDPL} ONEDPL_BACKEND)
     # XXX oneDPL looks for omp instead of openmp, which mismatches(!) with ONEDPL_PAR_BACKEND if using find_package

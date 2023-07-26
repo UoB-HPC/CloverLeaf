@@ -34,3 +34,5 @@ out/
 .directory
 
 clover.out
+
+.gdb_history

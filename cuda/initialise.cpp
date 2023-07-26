@@ -22,7 +22,7 @@
 #include "initialise.h"
 #include "start.h"
 
-std::pair<clover::context, run_args> create_context(bool silent, const std::vector<std::string> &args) {
+model create_context(bool silent, const std::vector<std::string> &args) {
   struct Device {
     int id{};
     std::string name{};
@@ -41,7 +41,7 @@ std::pair<clover::context, run_args> create_context(bool silent, const std::vect
   auto [device, parsed] = list_and_parse<Device>(
       silent, devices, [](auto &d) { return d.name; }, args);
   clover::checkError(cudaSetDevice(device.id));
-  return {clover::context{}, parsed};
+  return model{clover::context{}, "CUDA", true, parsed};
 }
 
 void report_context(const clover::context &) {
@@ -49,8 +49,6 @@ void report_context(const clover::context &) {
   clover::checkError(cudaGetDevice(&device));
   cudaDeviceProp props{};
   clover::checkError(cudaGetDeviceProperties(&props, device));
-
-  std::cout << "Using CUDA:" << std::endl;
   std::cout << " - Device: " //
             << props.name << " (" << (props.totalGlobalMem / 1024 / 1024) << "MB;"
             << "sm_" << props.major << props.minor << ")" << std::endl;
