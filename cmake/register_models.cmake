@@ -114,14 +114,12 @@ endfunction()
 
 macro(register_model NAME PREPROCESSOR_NAME)
     list(APPEND REGISTERED_MODELS "${NAME}")
-
     string(TOUPPER ${NAME} MODEL_UPPER)
-
+    set(IMPL_${MODEL_UPPER}_DIRECTORIES "src/${NAME}")
     foreach (SRC_FILE ${ARGN})
-        list(APPEND IMPL_${MODEL_UPPER}_SOURCES "${NAME}/${SRC_FILE}")
+        list(APPEND IMPL_${MODEL_UPPER}_SOURCES "src/${NAME}/${SRC_FILE}")
     endforeach ()
 
-    #    list(APPEND IMPL_${MODEL_UPPER}_SOURCES "${NAME}/${ARGN}")
     list(APPEND IMPL_${MODEL_UPPER}_DEFINITIONS "${PREPROCESSOR_NAME}")
 endmacro()
 
@@ -129,7 +127,7 @@ endmacro()
 macro(load_model MODEL)
     if ("${MODEL}" IN_LIST REGISTERED_MODELS)
         string(TOLOWER "${MODEL}" MODEL_LOWER)
-        set(MODEL_FILE ${CMAKE_CURRENT_SOURCE_DIR}/${MODEL_LOWER}/model.cmake)
+        set(MODEL_FILE ${CMAKE_CURRENT_SOURCE_DIR}/src/${MODEL_LOWER}/model.cmake)
         include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${MODEL_LOWER})
         if (NOT EXISTS ${MODEL_FILE})
             message(FATAL_ERROR "${MODEL_FILE} not found, perhaps it needs to be implemented?")
@@ -137,6 +135,7 @@ macro(load_model MODEL)
         include(${MODEL_FILE})
         string(TOUPPER "${MODEL}" MODEL_UPPER)
         list(APPEND IMPL_SOURCES ${IMPL_${MODEL_UPPER}_SOURCES})
+        list(APPEND IMPL_DIRECTORIES ${IMPL_${MODEL_UPPER}_DIRECTORIES})
         list(APPEND IMPL_DEFINITIONS ${IMPL_${MODEL_UPPER}_DEFINITIONS})
 
         set(BIN_NAME ${MODEL_LOWER}-cloverleaf)

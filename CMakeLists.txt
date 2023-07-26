@@ -19,14 +19,14 @@ include(FetchContent)
 if (NOT MODEL)
     set(MODEL std-indices)
     #    set(NVHPC_OFFLOAD cc60)
-#        set(CXX_EXTRA_FLAGS
-#                -stdpar
-#                -gpu=cc61
-#                --restrict
-#                -Mllvm-fast
-#                -Ktrap=none
-#                -Minfo=accel
-#                -Minfo=stdpar)
+    #        set(CXX_EXTRA_FLAGS
+    #                -stdpar
+    #                -gpu=cc61
+    #                --restrict
+    #                -Mllvm-fast
+    #                -Ktrap=none
+    #                -Minfo=accel
+    #                -Minfo=stdpar)
     set(USE_TBB ON)
     set(ENABLE_MPI ON)
 endif ()
@@ -135,8 +135,8 @@ if ((NOT BUILD_TYPE STREQUAL RELEASE) AND (NOT BUILD_TYPE STREQUAL DEBUG))
 endif ()
 
 # setup some defaults flags for everything
-set(DEFAULT_DEBUG_CXX_FLAGS -O2)
-set(DEFAULT_RELEASE_CXX_FLAGS -O3 -march=native)
+set(DEFAULT_DEBUG_CXX_FLAGS -Wall -O2)
+set(DEFAULT_RELEASE_CXX_FLAGS -Wall -O3 -march=native)
 
 macro(hint_flag FLAG DESCRIPTION)
     if (NOT DEFINED ${FLAG})
@@ -274,7 +274,7 @@ set(MODEL_SRC
 # register out models <model_name> <preprocessor_def_name> <source files...>
 register_model(omp USE_OMP ${MODEL_SRC})
 register_model(omp-target USE_OMP_TARGET ${MODEL_SRC})
-#register_model(serial USE_SERIAL ${MODEL_SRC}) # TODO
+register_model(serial USE_SERIAL ${MODEL_SRC})
 register_model(cuda USE_CUDA ${MODEL_SRC})
 register_model(hip USE_HIP ${MODEL_SRC})
 register_model(std-indices USE_STD ${MODEL_SRC})
@@ -366,8 +366,7 @@ target_compile_definitions(${EXE_NAME} PUBLIC ${IMPL_DEFINITIONS})
 if (CXX_EXTRA_LIBRARIES)
     target_link_libraries(${EXE_NAME} PUBLIC ${CXX_EXTRA_LIBRARIES})
 endif ()
-
-target_include_directories(${EXE_NAME} PRIVATE driver)
+target_include_directories(${EXE_NAME} PRIVATE driver ${IMPL_DIRECTORIES})
 
 target_compile_options(${EXE_NAME} PUBLIC "$<$<COMPILE_LANGUAGE:CXX>:$<$<CONFIG:Release>:${ACTUAL_RELEASE_CXX_FLAGS};${CXX_EXTRA_FLAGS}>>")
 target_compile_options(${EXE_NAME} PUBLIC "$<$<COMPILE_LANGUAGE:CXX>:$<$<CONFIG:Debug>:${ACTUAL_DEBUG_CXX_FLAGS};${CXX_EXTRA_FLAGS}>>")

@@ -49,10 +49,10 @@ function test_nompi() {
   build_$2/*-cloverleaf --device "$1" --file "$PROBLEM" --profile true
 }
 
-( 
+(
 
-  #    test_nompi "0" serial -DCXX_EXTRA_FLAGS="-Ofast"   -DCMAKE_CXX_COMPILER=g++
-  #    test_nompi "0" serial -DCXX_EXTRA_FLAGS="-Ofast"   -DCMAKE_CXX_COMPILER=clang++
+  test_nompi "0" serial -DCXX_EXTRA_FLAGS="-Ofast" -DCMAKE_CXX_COMPILER=g++
+  test_nompi "0" serial -DCXX_EXTRA_FLAGS="-Ofast" -DCMAKE_CXX_COMPILER=clang++
 
   (
     :
@@ -97,8 +97,8 @@ function test_nompi() {
 #exit 0
 (
   module load mpi
-  #  #  test $CPU_RANKS "0" serial   -DCMAKE_CXX_COMPILER=g++
-  #  #  test $CPU_RANKS "0" serial   -DCMAKE_CXX_COMPILER=clang++
+  test $CPU_RANKS "0" serial -DCMAKE_CXX_COMPILER=g++
+  test $CPU_RANKS "0" serial -DCMAKE_CXX_COMPILER=clang++
   (
     :
     test $CPU_RANKS "0" std-indices -DCMAKE_CXX_COMPILER=g++ -DUSE_TBB=ON
