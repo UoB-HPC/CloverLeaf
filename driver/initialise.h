@@ -50,11 +50,11 @@ std::pair<T, run_args> list_and_parse(bool silent, const std::vector<T> &devices
                                       const std::vector<std::string> &args                     //
 ) {
 
-  const auto printHelp = [&](const std::string &name) {
+  const auto printHelp = [&]() {
     if (silent) return;
     std::cout << std::endl;
     std::cout //
-        << "Usage: " << name << " [OPTIONS]\n\n"
+        << "Usage: cloverleaf [OPTIONS]\n\n"
         << "Options:\n"
         << "  -h  --help                             Print this message\n"
         << "      --list                             List available devices with index and exit\n"
@@ -71,12 +71,13 @@ std::pair<T, run_args> list_and_parse(bool silent, const std::vector<T> &devices
         << std::endl;
   };
 
-  const auto readParam = [&](size_t current, const std::string &emptyMessage, auto map) {
+  const auto readParam = [&](size_t &current, const std::string &emptyMessage, auto map) {
     if (current + 1 < args.size()) {
-      return map(args[current + 1]);
+        map(args[current + 1]);
+        current++;
     } else {
       std::cerr << emptyMessage << std::endl;
-      printHelp(args[0]);
+      printHelp();
       std::exit(EXIT_FAILURE);
     }
   };
@@ -92,9 +93,8 @@ std::pair<T, run_args> list_and_parse(bool silent, const std::vector<T> &devices
   auto config = run_args{"", "clover.in", "clover.out", run_args::staging_buffer::automatic, {}};
   for (size_t i = 0; i < args.size(); ++i) {
     const auto &arg = args[i];
-
     if (arg == "--help" || arg == "-h") {
-      printHelp(args[0]);
+      printHelp();
       std::exit(EXIT_SUCCESS);
     } else if (arg == "--dump") {
       readParam(i, "--dump specified but no dir was given", [&config](const auto &param) { config.dumpDir = param; });
@@ -133,7 +133,7 @@ std::pair<T, run_args> list_and_parse(bool silent, const std::vector<T> &devices
       readParam(i, "--in,--file specified but no path was given", [&config](const auto &param) { config.inFile = param; });
     } else if (arg == "--out") {
       readParam(i, "--out specified but no path was given", [&config](const auto &param) { config.outFile = param; });
-    } else if (arg == "--device-aware") {
+    } else if (arg == "--staging-buffer") {
       readParam(i, "--staging-buffer specified but no option given, expecting <true|false|auto>", [&config](const auto &param) {
         if (param == "true") {
           config.staging_buffer = run_args::staging_buffer::enabled;
@@ -146,6 +146,10 @@ std::pair<T, run_args> list_and_parse(bool silent, const std::vector<T> &devices
           std::exit(EXIT_FAILURE);
         }
       });
+    } else {
+      std::cerr << "Unknown argument: " << arg << std::endl;
+      printHelp();
+      std::exit(EXIT_FAILURE);
     }
   }
   return {device, config};

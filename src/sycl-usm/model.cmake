@@ -26,6 +26,11 @@ register_flag_optional(USE_RANGE2D_MODE
            RANGE2D_ROUND  - Round all dimensions in a range<2> to multiples of 32"
         "RANGE2D_LINEAR")
 
+register_flag_optional(USE_HOSTTASK
+        "Whether to use SYCL2020 host_task for MPI related calls or fallback to queue.wait() not all SYCL compilers support this"
+        "OFF")
+
+
 register_flag_optional(OpenCL_LIBRARY
         "[ComputeCpp only] Path to OpenCL library, usually called libOpenCL.so"
         "${OpenCL_LIBRARY}")
@@ -36,6 +41,11 @@ macro(setup)
     if (USE_RANGE2D_MODE)
         register_definitions(RANGE2D_MODE=${USE_RANGE2D_MODE})
     endif ()
+
+    if (USE_HOSTTASK)
+        register_definitions(USE_HOSTTASK)
+    endif ()
+
 
     if (${SYCL_COMPILER} STREQUAL "HIPSYCL")
 

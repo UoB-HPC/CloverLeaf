@@ -17,7 +17,7 @@ include(FetchContent)
 ######
 
 if (NOT MODEL)
-    set(MODEL std-indices)
+    #    set(MODEL std-indices)
     #    set(NVHPC_OFFLOAD cc60)
     #        set(CXX_EXTRA_FLAGS
     #                -stdpar
@@ -27,8 +27,18 @@ if (NOT MODEL)
     #                -Ktrap=none
     #                -Minfo=accel
     #                -Minfo=stdpar)
-    set(USE_TBB ON)
+    #    set(USE_TBB ON)
+    #    set(ENABLE_MPI ON)
+
+    set(MODEL sycl-acc)
+    set(SYCL_COMPILER ONEAPI-ICPX)
+    set(SYCL_COMPILER_DIR /opt/intel/oneapi/compiler/2023.1.0/linux/bin-llvm/)
+    set(CXX_EXTRA_FLAGS -fsycl-targets=nvptx64-nvidia-cuda --cuda-path=/opt/nvidia/hpc_sdk/Linux_x86_64/2023/cuda/ -Xsycl-target-backend --cuda-gpu-arch=sm_60)
+    set(CXX_EXTRA_LINK_FLAGS -fsycl-targets=nvptx64-nvidia-cuda --cuda-path=/opt/nvidia/hpc_sdk/Linux_x86_64/2023/cuda/ -Xsycl-target-backend --cuda-gpu-arch=sm_60)
     set(ENABLE_MPI ON)
+    set(USE_HOSTTASK ON)
+
+
 endif ()
 
 #if (NOT MODEL)
@@ -95,6 +105,7 @@ endif ()
 #set(CXX_EXTRA_FLAGS -fsycl-targets=nvptx64-nvidia-cuda --cuda-path=/opt/nvidia/hpc_sdk/Linux_x86_64/2023/cuda/ -Xsycl-target-backend --cuda-gpu-arch=sm_60)
 #set(CXX_EXTRA_LINK_FLAGS -fsycl-targets=nvptx64-nvidia-cuda --cuda-path=/opt/nvidia/hpc_sdk/Linux_x86_64/2023/cuda/ -Xsycl-target-backend --cuda-gpu-arch=sm_60)
 #set(ENABLE_MPI ON)
+#set(USE_HOSTTASK ON)
 #set(ENABLE_PROFILING OFF)
 
 

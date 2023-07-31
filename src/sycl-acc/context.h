@@ -94,7 +94,7 @@ template <typename T> struct Buffer1D {
   // **for host buffers only**
   inline auto access() { return buffer.get_host_access(); }
 
-  template <sycl::access::mode mode> inline T *access_ptr(size_t count) {
+  template <sycl::access::mode mode> inline auto access_ptr(size_t count) {
 
     return sycl::host_accessor<T, 1, mode>{buffer, count}.get_pointer();
 
