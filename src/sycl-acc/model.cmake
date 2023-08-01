@@ -30,13 +30,6 @@ register_flag_optional(USE_HOSTTASK
         "Whether to use SYCL2020 host_task for MPI related calls or fallback to queue.wait() not all SYCL compilers support this"
         "OFF")
 
-register_flag_optional(USE_INTEROP_BACKEND
-        "Which SYCL native backend to use if USE_HOSTTASK is enabled and staging buffer is elided/disabled at runtime, possible options are:
-           BACKEND_L0   - Corresponds to sycl::backend::ext_oneapi_level_zero
-           BACKEND_CUDA - Corresponds to sycl::backend::ext_oneapi_cuda
-           BACKEND_HIP  - Corresponds to sycl::backend::ext_oneapi_hip"
-        "BACKEND_CUDA")
-
 register_flag_optional(OpenCL_LIBRARY
         "[ComputeCpp only] Path to OpenCL library, usually called libOpenCL.so"
         "${OpenCL_LIBRARY}")
@@ -50,10 +43,6 @@ macro(setup)
 
     if (USE_HOSTTASK)
         register_definitions(USE_HOSTTASK)
-    endif ()
-
-    if (USE_INTEROP_BACKEND)
-        register_definitions(INTEROP_BACKEND=${USE_INTEROP_BACKEND})
     endif ()
 
     if (${SYCL_COMPILER} STREQUAL "HIPSYCL")

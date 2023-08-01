@@ -230,22 +230,19 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
   }
 }
 
-#define BACKEND_L0 0x01
-#define BACKEND_CUDA 0x02
-#define BACKEND_HIP 0x03
-// XXX We can't support sycl::backend::opencl because it returns a cl_mem, sycl::backend::all doesn't compile at all
-
-#ifdef USE_HOSTTASK
-  #if INTEROP_BACKEND == BACKEND_L0
-const static auto mem_backend = sycl::backend::ext_oneapi_level_zero;
-  #elif INTEROP_BACKEND == BACKEND_CUDA
-const static auto mem_backend = sycl::backend::ext_oneapi_cuda;
-  #elif INTEROP_BACKEND == BACKEND_HIP
-const static auto mem_backend = sycl::backend::ext_oneapi_hip;
-  #else
-    #error "Unknown/missing INTEROP_BACKEND"
-  #endif
-#endif
+template <typename A> decltype(auto) get_native_ptr_or_throw(sycl::interop_handle &ih, A accessor) {
+  using sycl::backend;
+  using T = std::remove_cv_t<typename decltype(accessor)::value_type>;
+  switch (ih.get_backend()) {
+    case backend::ext_oneapi_level_zero: return reinterpret_cast<T *>(ih.get_native_mem<backend::ext_oneapi_level_zero>(accessor));
+    case backend::ext_oneapi_cuda: return reinterpret_cast<T *>(ih.get_native_mem<backend::ext_oneapi_cuda>(accessor));
+    case backend::ext_oneapi_hip: return reinterpret_cast<T *>(ih.get_native_mem<backend::ext_oneapi_hip>(accessor));
+    default:
+      std::stringstream ss;
+      ss << "backend " << ih.get_backend() << " does not support a pointer-based sycl::interop_handle::get_native_mem";
+      throw std::logic_error(ss.str());
+  }
+}
 
 void clover_send_recv_message_left(global_variables &globals, clover::Buffer1D<double> &left_snd_buffer,
                                    clover::Buffer1D<double> &left_rcv_buffer, int total_size, int tag_send, int tag_recv,
@@ -269,10 +266,8 @@ void clover_send_recv_message_left(global_variables &globals, clover::Buffer1D<d
       auto left_snd_buffer_acc = left_snd_buffer.buffer.get_access<sycl::access_mode::read>(h);
       auto left_rcv_buffer_acc = left_rcv_buffer.buffer.get_access<sycl::access_mode::write>(h);
       h.host_task([=, &req_send, &req_recv](sycl::interop_handle ih) { // XXX pass handle arg here as copy, not ref!
-        MPI_Isend(reinterpret_cast<double *>(ih.get_native_mem<mem_backend>(left_snd_buffer_acc)), total_size, MPI_DOUBLE, left_task,
-                  tag_send, MPI_COMM_WORLD, &req_send);
-        MPI_Irecv(reinterpret_cast<double *>(ih.get_native_mem<mem_backend>(left_rcv_buffer_acc)), total_size, MPI_DOUBLE, left_task,
-                  tag_recv, MPI_COMM_WORLD, &req_recv);
+        MPI_Isend(get_native_ptr_or_throw(ih, left_snd_buffer_acc), total_size, MPI_DOUBLE, left_task, tag_send, MPI_COMM_WORLD, &req_send);
+        MPI_Irecv(get_native_ptr_or_throw(ih, left_rcv_buffer_acc), total_size, MPI_DOUBLE, left_task, tag_recv, MPI_COMM_WORLD, &req_recv);
       });
     });
   }
@@ -304,10 +299,10 @@ void clover_send_recv_message_right(global_variables &globals, clover::Buffer1D<
       auto right_snd_buffer_acc = right_snd_buffer.buffer.get_access<sycl::access_mode::read>(h);
       auto right_rcv_buffer_acc = right_rcv_buffer.buffer.get_access<sycl::access_mode::write>(h);
       h.host_task([=, &req_send, &req_recv](sycl::interop_handle ih) { // XXX pass handle arg here as copy, not ref!
-        MPI_Isend(reinterpret_cast<double *>(ih.get_native_mem<mem_backend>(right_snd_buffer_acc)), total_size, MPI_DOUBLE, right_task,
-                  tag_send, MPI_COMM_WORLD, &req_send);
-        MPI_Irecv(reinterpret_cast<double *>(ih.get_native_mem<mem_backend>(right_rcv_buffer_acc)), total_size, MPI_DOUBLE, right_task,
-                  tag_recv, MPI_COMM_WORLD, &req_recv);
+        MPI_Isend(get_native_ptr_or_throw(ih, right_snd_buffer_acc), total_size, MPI_DOUBLE, right_task, tag_send, MPI_COMM_WORLD,
+                  &req_send);
+        MPI_Irecv(get_native_ptr_or_throw(ih, right_rcv_buffer_acc), total_size, MPI_DOUBLE, right_task, tag_recv, MPI_COMM_WORLD,
+                  &req_recv);
       });
     });
   }
@@ -339,10 +334,8 @@ void clover_send_recv_message_top(global_variables &globals, clover::Buffer1D<do
       auto top_snd_buffer_acc = top_snd_buffer.buffer.get_access<sycl::access_mode::read>(h);
       auto top_rcv_buffer_acc = top_rcv_buffer.buffer.get_access<sycl::access_mode::write>(h);
       h.host_task([=, &req_send, &req_recv](sycl::interop_handle ih) { // XXX pass handle arg here as copy, not ref!
-        MPI_Isend(reinterpret_cast<double *>(ih.get_native_mem<mem_backend>(top_snd_buffer_acc)), total_size, MPI_DOUBLE, top_task,
-                  tag_send, MPI_COMM_WORLD, &req_send);
-        MPI_Irecv(reinterpret_cast<double *>(ih.get_native_mem<mem_backend>(top_rcv_buffer_acc)), total_size, MPI_DOUBLE, top_task,
-                  tag_recv, MPI_COMM_WORLD, &req_recv);
+        MPI_Isend(get_native_ptr_or_throw(ih, top_snd_buffer_acc), total_size, MPI_DOUBLE, top_task, tag_send, MPI_COMM_WORLD, &req_send);
+        MPI_Irecv(get_native_ptr_or_throw(ih, top_rcv_buffer_acc), total_size, MPI_DOUBLE, top_task, tag_recv, MPI_COMM_WORLD, &req_recv);
       });
     });
   }
@@ -375,10 +368,10 @@ void clover_send_recv_message_bottom(global_variables &globals, clover::Buffer1D
       auto bottom_rcv_buffer_acc = bottom_rcv_buffer.buffer.get_access<sycl::access_mode::write>(h);
 
       h.host_task([=, &req_send, &req_recv](sycl::interop_handle ih) { // XXX pass handle arg here as copy, not ref!
-        MPI_Isend(reinterpret_cast<double *>(ih.get_native_mem<mem_backend>(bottom_snd_buffer_acc)), total_size, MPI_DOUBLE, bottom_task,
-                  tag_send, MPI_COMM_WORLD, &req_send);
-        MPI_Irecv(reinterpret_cast<double *>(ih.get_native_mem<mem_backend>(bottom_rcv_buffer_acc)), total_size, MPI_DOUBLE, bottom_task,
-                  tag_recv, MPI_COMM_WORLD, &req_recv);
+        MPI_Isend(get_native_ptr_or_throw(ih, bottom_snd_buffer_acc), total_size, MPI_DOUBLE, bottom_task, tag_send, MPI_COMM_WORLD,
+                  &req_send);
+        MPI_Irecv(get_native_ptr_or_throw(ih, bottom_rcv_buffer_acc), total_size, MPI_DOUBLE, bottom_task, tag_recv, MPI_COMM_WORLD,
+                  &req_recv);
       });
     });
   }
