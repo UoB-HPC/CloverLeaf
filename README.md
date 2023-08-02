@@ -25,8 +25,8 @@ particular order:
 - CUDA
 - HIP
 - OpenMP 3 and 4.5
-- C++ Parallel STL
-- Kokkos
+- C++ Parallel STL (StdPar)
+- Kokkos >= 4
 - SYCL and SYCL 2020
 
 Planned:
@@ -46,7 +46,7 @@ against is required.
 The project supports building with CMake >= 3.13.0, which can be installed without root via
 the [official script](https://cmake.org/download/).
 
-Each BabelStream implementation (programming model) is built as follows:
+Each implementation (programming model) is built as follows:
 
 ```shell
 $ cd CloverLeaf
@@ -62,7 +62,7 @@ $ cmake --build build
 $ ./build/<model>-cloverleaf
 ```
 
-The `MODEL` option selects one implementation of BabelStream to build.
+The `MODEL` option selects one implementation of CloverLeaf to build.
 The source for each model's implementations are located in `./src/<model>`.
 
 ## Running

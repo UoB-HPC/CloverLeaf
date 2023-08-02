@@ -32,7 +32,7 @@ CloverLeaf. If not, see http://www.gnu.org/licenses/.
 model create_context(bool silent, const std::vector<std::string> &args) {
   auto [_, parsed] = list_and_parse<std::string>(
       silent, {"(default device)"}, [](auto &d) { return d; }, args);
-  return model{clover::context{}, "C++ PSTL (std-indices)", false, parsed};
+  return model{clover::context{}, "C++ PSTL (StdPar, std-indices)", false, parsed};
 }
 
 void report_context(const clover::context &) {}

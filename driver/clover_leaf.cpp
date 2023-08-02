@@ -60,32 +60,29 @@ global_variables initialise(parallel_ &parallel, const std::vector<std::string> 
   auto model = create_context(!parallel.boss, args);
   config.dumpDir = model.args.dumpDir;
 
-  bool mpi_enabled =
 #ifdef NO_MPI
-      false;
+  bool mpi_enabled = false;
 #else
-      true;
+  bool mpi_enabled = true;
 #endif
 
-  std::optional<bool> mpi_cuda_aware_header =
 #if defined(MPIX_CUDA_AWARE_SUPPORT) && MPIX_CUDA_AWARE_SUPPORT
-      true;
+  std::optional<bool> mpi_cuda_aware_header = true;
 #elif defined(MPIX_CUDA_AWARE_SUPPORT) && !MPIX_CUDA_AWARE_SUPPORT
-      false;
+  std::optional<bool> mpi_cuda_aware_header = false;
 #else
-          {};
+  std::optional<bool> mpi_cuda_aware_header = {};
 #endif
 
-  std::optional<bool> mpi_cuda_aware_runtime =
 #if defined(MPIX_CUDA_AWARE_SUPPORT)
-      MPIX_Query_cuda_support() != 0;
+  std::optional<bool> mpi_cuda_aware_runtime = MPIX_Query_cuda_support() != 0;
 #else
-      {};
+  std::optional<bool> mpi_cuda_aware_runtime = {};
 #endif
 
   if (!model.offload) {
     if (model.args.staging_buffer == run_args::staging_buffer::enabled) {
-      std::cout << "WARNING: enabling staging buffer on a non-offload (host) model or device is no-op" << std::endl;
+      std::cout << "# WARNING: enabling staging buffer on a non-offload (host) model or device is no-op" << std::endl;
     }
     config.staging_buffer = false;
   } else {

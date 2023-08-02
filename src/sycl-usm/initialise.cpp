@@ -45,7 +45,7 @@ model create_context(bool silent, const std::vector<std::string> &args) {
     }
   };
   auto offload = device.get_info<sycl::info::device::device_type>() == sycl::info::device_type::gpu;
-  return {clover::context{sycl::queue(device, handler, {})}, "SYCL (accessors)", offload, parsed};
+  return {clover::context{sycl::queue(device, handler, {})}, "SYCL (usm)", offload, parsed};
 }
 
 static std::string deviceName(sycl::info::device_type type) {
