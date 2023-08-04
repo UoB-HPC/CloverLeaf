@@ -152,6 +152,7 @@ std::pair<T, run_args> list_and_parse(bool silent, const std::vector<T> &devices
       std::exit(EXIT_FAILURE);
     }
   }
+  listAll();
   return {device, config};
 }
 
