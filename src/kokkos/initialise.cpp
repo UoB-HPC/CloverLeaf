@@ -35,6 +35,10 @@
 model create_context(bool silent, const std::vector<std::string> &args) {
   if (!Kokkos::is_initialized()) {
     Kokkos::initialize();
+    std::atexit([]() {
+      // XXX Make sure all views are dropped first, otherwise finalize throws
+      Kokkos::finalize();
+    });
   }
   auto [_, parsed] = list_and_parse<std::string>(
       silent, {typeid(Kokkos::DefaultExecutionSpace).name()}, [](auto &d) { return d; }, args);

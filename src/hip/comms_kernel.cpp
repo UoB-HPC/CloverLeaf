@@ -89,15 +89,15 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     }
   }
 
-  clover::Buffer1D<double> left_rcv_device(globals.context, end_pack_index_left_right);
-  clover::Buffer1D<double> left_snd_device(globals.context, end_pack_index_left_right);
-  clover::Buffer1D<double> right_rcv_device(globals.context, end_pack_index_left_right);
-  clover::Buffer1D<double> right_snd_device(globals.context, end_pack_index_left_right);
+  static clover::Buffer1D<double> left_rcv_device(globals.context, end_pack_index_left_right);
+  static clover::Buffer1D<double> left_snd_device(globals.context, end_pack_index_left_right);
+  static clover::Buffer1D<double> right_rcv_device(globals.context, end_pack_index_left_right);
+  static clover::Buffer1D<double> right_snd_device(globals.context, end_pack_index_left_right);
 
-  clover::Buffer1D<double> top_rcv_device(globals.context, end_pack_index_bottom_top);
-  clover::Buffer1D<double> top_snd_device(globals.context, end_pack_index_bottom_top);
-  clover::Buffer1D<double> bottom_rcv_device(globals.context, end_pack_index_bottom_top);
-  clover::Buffer1D<double> bottom_snd_device(globals.context, end_pack_index_bottom_top);
+  static clover::Buffer1D<double> top_rcv_device(globals.context, end_pack_index_bottom_top);
+  static clover::Buffer1D<double> top_snd_device(globals.context, end_pack_index_bottom_top);
+  static clover::Buffer1D<double> bottom_rcv_device(globals.context, end_pack_index_bottom_top);
+  static clover::Buffer1D<double> bottom_snd_device(globals.context, end_pack_index_bottom_top);
 
   bool stage = globals.config.staging_buffer;
 
@@ -252,14 +252,6 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     }
   }
 
-  left_rcv_device.release();
-  left_snd_device.release();
-  right_rcv_device.release();
-  right_snd_device.release();
-  top_rcv_device.release();
-  top_snd_device.release();
-  bottom_rcv_device.release();
-  bottom_snd_device.release();
 
   if (stage && left_rcv_staging) std::free(left_rcv_staging);
   if (stage && left_snd_staging) std::free(left_snd_staging);

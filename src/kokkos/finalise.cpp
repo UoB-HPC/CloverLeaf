@@ -19,9 +19,6 @@
 
 #include "finalise.h"
 
-void finalise(global_variables &globals) {
-  std::atexit([]() {
-    // XXX Make sure all views are dropped first, otherwise finalize throws
-    Kokkos::finalize();
-  });
+void finalise(global_variables &) {
+  // For correct destructor orders on static views (e.g., in comms_kernel.cpp), we register an atexit hook at initialisation
 }

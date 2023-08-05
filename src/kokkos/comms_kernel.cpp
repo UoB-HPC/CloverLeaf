@@ -73,24 +73,24 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     }
   }
 
-  clover::Buffer1D<double> left_rcv_buffer(globals.context, end_pack_index_left_right);
-  clover::Buffer1D<double> left_snd_buffer(globals.context, end_pack_index_left_right);
-  clover::Buffer1D<double> right_rcv_buffer(globals.context, end_pack_index_left_right);
-  clover::Buffer1D<double> right_snd_buffer(globals.context, end_pack_index_left_right);
+  static clover::Buffer1D<double> left_rcv_buffer(globals.context, end_pack_index_left_right);
+  static clover::Buffer1D<double> left_snd_buffer(globals.context, end_pack_index_left_right);
+  static clover::Buffer1D<double> right_rcv_buffer(globals.context, end_pack_index_left_right);
+  static clover::Buffer1D<double> right_snd_buffer(globals.context, end_pack_index_left_right);
 
-  clover::Buffer1D<double> top_rcv_buffer(globals.context, end_pack_index_bottom_top);
-  clover::Buffer1D<double> top_snd_buffer(globals.context, end_pack_index_bottom_top);
-  clover::Buffer1D<double> bottom_rcv_buffer(globals.context, end_pack_index_bottom_top);
-  clover::Buffer1D<double> bottom_snd_buffer(globals.context, end_pack_index_bottom_top);
+  static clover::Buffer1D<double> top_rcv_buffer(globals.context, end_pack_index_bottom_top);
+  static clover::Buffer1D<double> top_snd_buffer(globals.context, end_pack_index_bottom_top);
+  static clover::Buffer1D<double> bottom_rcv_buffer(globals.context, end_pack_index_bottom_top);
+  static clover::Buffer1D<double> bottom_snd_buffer(globals.context, end_pack_index_bottom_top);
 
-  auto hm_left_snd_buffer = Kokkos::create_mirror_view(left_snd_buffer.view);
-  auto hm_left_rcv_buffer = Kokkos::create_mirror_view(left_rcv_buffer.view);
-  auto hm_right_snd_buffer = Kokkos::create_mirror_view(right_snd_buffer.view);
-  auto hm_right_rcv_buffer = Kokkos::create_mirror_view(right_rcv_buffer.view);
-  auto hm_top_snd_buffer = Kokkos::create_mirror_view(top_snd_buffer.view);
-  auto hm_top_rcv_buffer = Kokkos::create_mirror_view(top_rcv_buffer.view);
-  auto hm_bottom_snd_buffer = Kokkos::create_mirror_view(bottom_snd_buffer.view);
-  auto hm_bottom_rcv_buffer = Kokkos::create_mirror_view(bottom_rcv_buffer.view);
+  static auto hm_left_snd_buffer = Kokkos::create_mirror_view(left_snd_buffer.view);
+  static auto hm_left_rcv_buffer = Kokkos::create_mirror_view(left_rcv_buffer.view);
+  static auto hm_right_snd_buffer = Kokkos::create_mirror_view(right_snd_buffer.view);
+  static auto hm_right_rcv_buffer = Kokkos::create_mirror_view(right_rcv_buffer.view);
+  static auto hm_top_snd_buffer = Kokkos::create_mirror_view(top_snd_buffer.view);
+  static auto hm_top_rcv_buffer = Kokkos::create_mirror_view(top_rcv_buffer.view);
+  static auto hm_bottom_snd_buffer = Kokkos::create_mirror_view(bottom_snd_buffer.view);
+  static auto hm_bottom_rcv_buffer = Kokkos::create_mirror_view(bottom_rcv_buffer.view);
 
   bool stage = globals.config.staging_buffer;
 

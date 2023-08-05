@@ -89,15 +89,15 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     }
   }
 
-  clover::Buffer1D<double> left_rcv_buffer(globals.context, end_pack_index_left_right);
-  clover::Buffer1D<double> left_snd_buffer(globals.context, end_pack_index_left_right);
-  clover::Buffer1D<double> right_rcv_buffer(globals.context, end_pack_index_left_right);
-  clover::Buffer1D<double> right_snd_buffer(globals.context, end_pack_index_left_right);
+  static clover::Buffer1D<double> left_rcv_buffer(globals.context, end_pack_index_left_right);
+  static clover::Buffer1D<double> left_snd_buffer(globals.context, end_pack_index_left_right);
+  static clover::Buffer1D<double> right_rcv_buffer(globals.context, end_pack_index_left_right);
+  static clover::Buffer1D<double> right_snd_buffer(globals.context, end_pack_index_left_right);
 
-  clover::Buffer1D<double> top_rcv_buffer(globals.context, end_pack_index_bottom_top);
-  clover::Buffer1D<double> top_snd_buffer(globals.context, end_pack_index_bottom_top);
-  clover::Buffer1D<double> bottom_rcv_buffer(globals.context, end_pack_index_bottom_top);
-  clover::Buffer1D<double> bottom_snd_buffer(globals.context, end_pack_index_bottom_top);
+  static clover::Buffer1D<double> top_rcv_buffer(globals.context, end_pack_index_bottom_top);
+  static clover::Buffer1D<double> top_snd_buffer(globals.context, end_pack_index_bottom_top);
+  static clover::Buffer1D<double> bottom_rcv_buffer(globals.context, end_pack_index_bottom_top);
+  static clover::Buffer1D<double> bottom_snd_buffer(globals.context, end_pack_index_bottom_top);
 
   double *left_rcv = left_rcv_buffer.data;
   double *left_snd = left_snd_buffer.data;
