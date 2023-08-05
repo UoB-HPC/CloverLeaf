@@ -101,14 +101,24 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
 
   bool stage = globals.config.staging_buffer;
 
-  double *left_rcv_staging = stage ? static_cast<double *>(std::malloc(left_rcv_device.size * sizeof(double))) : nullptr;
-  double *left_snd_staging = stage ? static_cast<double *>(std::malloc(left_snd_device.size * sizeof(double))) : nullptr;
-  double *right_rcv_staging = stage ? static_cast<double *>(std::malloc(right_rcv_device.size * sizeof(double))) : nullptr;
-  double *right_snd_staging = stage ? static_cast<double *>(std::malloc(right_snd_device.size * sizeof(double))) : nullptr;
-  double *top_rcv_staging = stage ? static_cast<double *>(std::malloc(top_rcv_device.size * sizeof(double))) : nullptr;
-  double *top_snd_staging = stage ? static_cast<double *>(std::malloc(top_snd_device.size * sizeof(double))) : nullptr;
-  double *bottom_rcv_staging = stage ? static_cast<double *>(std::malloc(bottom_rcv_device.size * sizeof(double))) : nullptr;
-  double *bottom_snd_staging = stage ? static_cast<double *>(std::malloc(bottom_snd_device.size * sizeof(double))) : nullptr;
+  static auto left_rcv_staging_vector = std::vector<double>(stage ? left_rcv_device.size : 0);
+  static auto left_snd_staging_vector = std::vector<double>(stage ? left_snd_device.size : 0);
+  static auto right_rcv_staging_vector = std::vector<double>(stage ? right_rcv_device.size : 0);
+  static auto right_snd_staging_vector = std::vector<double>(stage ? right_snd_device.size : 0);
+
+  static auto top_rcv_staging_vector = std::vector<double>(stage ? top_rcv_device.size : 0);
+  static auto top_snd_staging_vector = std::vector<double>(stage ? top_snd_device.size : 0);
+  static auto bottom_rcv_staging_vector = std::vector<double>(stage ? bottom_rcv_device.size : 0);
+  static auto bottom_snd_staging_vector = std::vector<double>(stage ? bottom_snd_device.size : 0);
+
+  auto left_rcv_staging = stage ? left_rcv_staging_vector.data() : nullptr;
+  auto left_snd_staging = stage ? left_snd_staging_vector.data() : nullptr;
+  auto right_rcv_staging = stage ? right_rcv_staging_vector.data() : nullptr;
+  auto right_snd_staging = stage ? right_snd_staging_vector.data() : nullptr;
+  auto top_rcv_staging = stage ? top_rcv_staging_vector.data() : nullptr;
+  auto top_snd_staging = stage ? top_snd_staging_vector.data() : nullptr;
+  auto bottom_rcv_staging = stage ? bottom_rcv_staging_vector.data() : nullptr;
+  auto bottom_snd_staging = stage ? bottom_snd_staging_vector.data() : nullptr;
 
   auto deviceToStaging = [](double *staging, clover::Buffer1D<double> &device) {
     clover::checkError(cudaMemcpy(staging, device.data, device.size * sizeof(double), CLOVER_MEMCPY_KIND_D2H));
@@ -251,15 +261,6 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
       }
     }
   }
-
-  if (stage && left_rcv_staging) std::free(left_rcv_staging);
-  if (stage && left_snd_staging) std::free(left_snd_staging);
-  if (stage && right_rcv_staging) std::free(right_rcv_staging);
-  if (stage && right_snd_staging) std::free(right_snd_staging);
-  if (stage && top_rcv_staging) std::free(top_rcv_staging);
-  if (stage && top_snd_staging) std::free(top_snd_staging);
-  if (stage && bottom_rcv_staging) std::free(bottom_rcv_staging);
-  if (stage && bottom_snd_staging) std::free(bottom_snd_staging);
 }
 
 void clover_send_recv_message_left(global_variables &globals, double *left_snd_buffer, double *left_rcv_buffer, int total_size,
