@@ -235,8 +235,12 @@ template <typename A> decltype(auto) get_native_ptr_or_throw(sycl::interop_handl
   using T = std::remove_cv_t<typename decltype(accessor)::value_type>;
   switch (ih.get_backend()) {
     case backend::ext_oneapi_level_zero: return reinterpret_cast<T *>(ih.get_native_mem<backend::ext_oneapi_level_zero>(accessor));
+#ifdef SYCL_EXT_ONEAPI_BACKEND_cuda
     case backend::ext_oneapi_cuda: return reinterpret_cast<T *>(ih.get_native_mem<backend::ext_oneapi_cuda>(accessor));
+#endif
+#ifdef SYCL_EXT_ONEAPI_BACKEND_HIP
     case backend::ext_oneapi_hip: return reinterpret_cast<T *>(ih.get_native_mem<backend::ext_oneapi_hip>(accessor));
+#endif
     default:
       std::stringstream ss;
       ss << "backend " << ih.get_backend() << " does not support a pointer-based sycl::interop_handle::get_native_mem";
