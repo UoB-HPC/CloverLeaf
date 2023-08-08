@@ -82,17 +82,15 @@ global_variables initialise(parallel_ &parallel, const std::vector<std::string> 
 
   if (!model.offload) {
     if (model.args.staging_buffer == run_args::staging_buffer::enabled) {
-      std::cout << "# WARNING: enabling staging buffer on a non-offload (host) model or device is no-op" << std::endl;
+      std::cout << "# WARNING: enabling staging buffer on a non-offload (host) model or device may be no-op" << std::endl;
     }
-    config.staging_buffer = false;
-  } else {
-    switch (model.args.staging_buffer) {
-      case run_args::staging_buffer::enabled: config.staging_buffer = true; break;
-      case run_args::staging_buffer::disable: config.staging_buffer = false; break;
-      case run_args::staging_buffer::automatic:
-        config.staging_buffer = !(mpi_cuda_aware_header.value_or(false) && mpi_cuda_aware_runtime.value_or(false));
-        break;
-    }
+  }
+  switch (model.args.staging_buffer) {
+    case run_args::staging_buffer::enabled: config.staging_buffer = true; break;
+    case run_args::staging_buffer::disable: config.staging_buffer = false; break;
+    case run_args::staging_buffer::automatic:
+      config.staging_buffer = !(mpi_cuda_aware_header.value_or(false) && mpi_cuda_aware_runtime.value_or(false));
+      break;
   }
 
   if (parallel.boss) {
@@ -108,8 +106,7 @@ global_variables initialise(parallel_ &parallel, const std::vector<std::string> 
               << (mpi_cuda_aware_header ? (*mpi_cuda_aware_header ? "true" : "false") : "unknown") << "\n"
               << " - Runtime device-awareness (CUDA-awareness): "
               << (mpi_cuda_aware_runtime ? (*mpi_cuda_aware_runtime ? "true" : "false") : "unknown") << "\n"
-              << " - Host-Device halo exchange staging buffer:  " << (!model.offload ? "N/A" : (config.staging_buffer ? "true" : "false"))
-              << "\n"
+              << " - Host-Device halo exchange staging buffer:  " << (config.staging_buffer ? "true" : "false") << "\n"
               << "Model:\n"
               << " - Name:      " << model.name << "\n"
               << " - Execution: " << (model.offload ? "Offload (device)" : "Host") //

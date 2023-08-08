@@ -104,7 +104,6 @@ std::pair<T, run_args> list_and_parse(bool silent, const std::vector<T> &devices
     } else if (arg == "--profile") {
       config.profile = true;
     } else if (arg == "--device") {
-      listAll();
       readParam(i, "--device specified but no size was given", [&](const auto &param) {
         try {
           device = devices.at(std::stoul(param));
@@ -124,7 +123,8 @@ std::pair<T, run_args> list_and_parse(bool silent, const std::vector<T> &devices
           } else if (devices.size() == 1)
             std::cerr << "# No matching device but there's only one device, will be using that anyway" << std::endl;
           else {
-            std::cerr << "No matching devices" << std::endl;
+            std::cerr << "No matching devices, all devices:" << std::endl;
+            listAll();
             std::exit(EXIT_FAILURE);
           }
         }
