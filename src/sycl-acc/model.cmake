@@ -24,7 +24,7 @@ register_flag_optional(USE_RANGE2D_MODE
            RANGE2D_NORMAL - Leave range<2> as-is
            RANGE2D_LINEAR - Linearise range<2> to a range<1> using divisions and modulo
            RANGE2D_ROUND  - Round all dimensions in a range<2> to multiples of 32"
-        "RANGE2D_NORMAL")
+        "RANGE2D_LINEAR")
 
 register_flag_optional(USE_SYCL2020_REDUCTION
         "Whether to use reduction introduced in SYCO2020"
