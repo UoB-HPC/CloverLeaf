@@ -20,14 +20,13 @@
 #include "field_summary.h"
 #include "context.h"
 #include "ideal_gas.h"
+#include "report.h"
 #include "sycl_reduction.hpp"
 #include "timer.h"
-#include "report.h"
 
 #include <iomanip>
 
 // #define USE_SYCL2020_REDUCTION
-
 
 //  @brief Fortran field summary kernel
 //  @author Wayne Gaudin
@@ -72,8 +71,8 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
     int xmax = t.info.t_xmax;
     int xmin = t.info.t_xmin;
 #ifdef USE_SYCL2020_REDUCTION
-    clover::Buffer<summary, 1> summaryResults(1);
-    globals.context
+    clover::Buffer1D<summary> summaryResults(globals.context, 1);
+    globals.context.queue
         .submit([&](sycl::handler &h) {
           auto xvel0_ = t.field.xvel0.access<R>(h);
           auto yvel0_ = t.field.yvel0.access<R>(h);
@@ -81,11 +80,16 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
           auto density0_ = t.field.density0.access<R>(h);
           auto energy0_ = t.field.energy0.access<R>(h);
           auto pressure_ = t.field.pressure.access<R>(h);
-          auto mm = summaryResults.access<W>(h);
+  #if defined(__HIPSYCL__) || defined(__OPENSYCL__)
+          auto reduction = sycl::reduction(summaryResults.access<RW>(h), {}, sycl::plus<summary>());
+  #else
+          auto reduction =
+              sycl::reduction(summaryResults.buffer, h, {}, sycl::plus<summary>(), sycl::property::reduction::initialize_to_identity());
+  #endif
+
           h.parallel_for(                                            //
               sycl::range<1>((ymax - ymin + 1) * (xmax - xmin + 1)), //
-              sycl::reduction(summaryResults.buffer, h, {}, sycl::plus<>(),
-                              sycl::property::reduction::initialize_to_identity()), //
+              reduction,                                             //
               [=](sycl::id<1> idx, auto &acc) {
                 const size_t j = xmin + 1 + idx[0] % (xmax - xmin + 1);
                 const size_t k = ymin + 1 + idx[0] / (xmax - xmin + 1);

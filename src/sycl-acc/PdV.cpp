@@ -38,8 +38,7 @@ void PdV_kernel(handler &h, bool predict, int x_min, int x_max, int y_min, int y
                 clover::Accessor<double, 2, R>::Type energy0, clover::Accessor<double, 2, W>::Type energy1,
                 clover::Accessor<double, 2, R>::Type pressure, clover::Accessor<double, 2, R>::Type viscosity,
                 clover::Accessor<double, 2, R>::Type xvel0, clover::Accessor<double, 2, R>::Type xvel1,
-                clover::Accessor<double, 2, R>::Type yvel0, clover::Accessor<double, 2, R>::Type yvel1,
-                clover::Accessor<double, 2, R>::Type volume_change) {
+                clover::Accessor<double, 2, R>::Type yvel0, clover::Accessor<double, 2, R>::Type yvel1) {
 
   // DO k=y_min,y_max
   //   DO j=x_min,x_max
@@ -103,21 +102,19 @@ void PdV(global_variables &globals, bool predict) {
     for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {
       tile_type &t = globals.chunk.tiles[tile];
       PdV_kernel(h, predict, t.info.t_xmin, t.info.t_xmax, t.info.t_ymin, t.info.t_ymax, globals.dt,
-                 t.field.xarea.access<R>(h),      //
-                 t.field.yarea.access<R>(h),      //
-                 t.field.volume.access<R>(h),     //
-                 t.field.density0.access<R>(h),   //
-                 t.field.density1.access<W>(h),   //
-                 t.field.energy0.access<R>(h),    //
-                 t.field.energy1.access<W>(h),    //
-                 t.field.pressure.access<R>(h),   //
-                 t.field.viscosity.access<R>(h),  //
-                 t.field.xvel0.access<R>(h),      //
-                 t.field.xvel1.access<R>(h),      //
-                 t.field.yvel0.access<R>(h),      //
-                 t.field.yvel1.access<R>(h),      //
-                 t.field.work_array1.access<R>(h) //
-      );
+                 t.field.xarea.access<R>(h),     //
+                 t.field.yarea.access<R>(h),     //
+                 t.field.volume.access<R>(h),    //
+                 t.field.density0.access<R>(h),  //
+                 t.field.density1.access<W>(h),  //
+                 t.field.energy0.access<R>(h),   //
+                 t.field.energy1.access<W>(h),   //
+                 t.field.pressure.access<R>(h),  //
+                 t.field.viscosity.access<R>(h), //
+                 t.field.xvel0.access<R>(h),     //
+                 t.field.xvel1.access<R>(h),     //
+                 t.field.yvel0.access<R>(h),     //
+                 t.field.yvel1.access<R>(h));
     }
   });
 

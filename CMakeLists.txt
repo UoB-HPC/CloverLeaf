@@ -30,13 +30,18 @@ if (NOT MODEL)
     #    set(USE_TBB ON)
     #    set(ENABLE_MPI ON)
 
-    set(MODEL sycl-acc)
+    set(MODEL sycl-usm)
     set(SYCL_COMPILER ONEAPI-ICPX)
-    set(SYCL_COMPILER_DIR /opt/intel/oneapi/compiler/2023.1.0/linux/bin-llvm/)
-    set(CXX_EXTRA_FLAGS -fsycl-targets=nvptx64-nvidia-cuda --cuda-path=/opt/nvidia/hpc_sdk/Linux_x86_64/2023/cuda/ -Xsycl-target-backend --cuda-gpu-arch=sm_60)
-    set(CXX_EXTRA_LINK_FLAGS -fsycl-targets=nvptx64-nvidia-cuda --cuda-path=/opt/nvidia/hpc_sdk/Linux_x86_64/2023/cuda/ -Xsycl-target-backend --cuda-gpu-arch=sm_60)
+
+    set(ENV{HIPSYCL_TARGETS} omp.accelerated)
+    set(SYCL_COMPILER HIPSYCL)
+    set(SYCL_COMPILER_DIR /opt/hipsycl/485ea80/)
+
+#    set(SYCL_COMPILER_DIR /opt/intel/oneapi/compiler/2023.1.0/linux/bin-llvm/)
+#    set(CXX_EXTRA_FLAGS -fsycl-targets=nvptx64-nvidia-cuda --cuda-path=/opt/nvidia/hpc_sdk/Linux_x86_64/2023/cuda/ -Xsycl-target-backend --cuda-gpu-arch=sm_60)
+#    set(CXX_EXTRA_LINK_FLAGS -fsycl-targets=nvptx64-nvidia-cuda --cuda-path=/opt/nvidia/hpc_sdk/Linux_x86_64/2023/cuda/ -Xsycl-target-backend --cuda-gpu-arch=sm_60)
     set(ENABLE_MPI ON)
-    set(USE_HOSTTASK ON)
+#    set(USE_HOSTTASK ON)
 
 
 endif ()
@@ -50,6 +55,9 @@ endif ()
 
 ########
 #########
+
+
+
 #if (NOT MODEL)
 #    set(MODEL sycl-acc)
 #    set(SYCL_COMPILER ONEAPI-ICPX)

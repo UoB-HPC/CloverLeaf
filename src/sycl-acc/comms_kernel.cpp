@@ -71,6 +71,97 @@ void clover_allocate_buffers(global_variables &globals, parallel_ &parallel) {
     //		globals.chunk.hm_top_rcv_buffer = Kokkos::create_mirror_view(globals.chunk.top_rcv_buffer);
   }
 }
+#if !(defined(__HIPSYCL__) || defined(__OPENSYCL__))
+template <typename A> decltype(auto) get_native_ptr_or_throw(sycl::interop_handle &ih, A accessor) {
+  using sycl::backend;
+  using T = std::remove_cv_t<typename decltype(accessor)::value_type>;
+  switch (ih.get_backend()) {
+    case backend::ext_oneapi_level_zero: return reinterpret_cast<T *>(ih.get_native_mem<backend::ext_oneapi_level_zero>(accessor));
+  #ifdef SYCL_EXT_ONEAPI_BACKEND_CUDA
+    case backend::ext_oneapi_cuda: return reinterpret_cast<T *>(ih.get_native_mem<backend::ext_oneapi_cuda>(accessor));
+  #endif
+  #ifdef SYCL_EXT_ONEAPI_BACKEND_HIP
+    case backend::ext_oneapi_hip: return reinterpret_cast<T *>(ih.get_native_mem<backend::ext_oneapi_hip>(accessor));
+  #endif
+    default:
+      std::stringstream ss;
+      ss << "backend " << ih.get_backend() << " does not support a pointer-based sycl::interop_handle::get_native_mem";
+      throw std::logic_error(ss.str());
+  }
+}
+#endif
+
+void clover_send_recv_message(global_variables &globals, chunk_neighbour_type tpe, clover::Buffer1D<double> &snd_buffer,
+                              clover::Buffer1D<double> &rcv_buffer, int total_size, int tag_send, int tag_recv, MPI_Request &req_send,
+                              MPI_Request &req_recv) {
+  int task = globals.chunk.chunk_neighbours[tpe] - 1;
+#ifdef USE_HOSTTASK
+  if (globals.config.staging_buffer) {
+    globals.context.queue.submit([&](sycl::handler &h) {
+      auto snd_buffer_acc = snd_buffer.buffer.get_host_access(h, sycl::read_only);
+      auto rcv_buffer_acc = rcv_buffer.buffer.get_host_access(h, sycl::write_only);
+      h.host_task([=, &req_send, &req_recv]() { // XXX pass handle arg here as copy, not ref!
+        MPI_Isend(snd_buffer_acc.get_pointer(), total_size, MPI_DOUBLE, task, tag_send, MPI_COMM_WORLD, &req_send);
+        MPI_Irecv(rcv_buffer_acc.get_pointer(), total_size, MPI_DOUBLE, task, tag_recv, MPI_COMM_WORLD, &req_recv);
+      });
+    });
+  } else {
+    globals.context.queue.submit([&](sycl::handler &h) {
+      auto snd_buffer_acc = snd_buffer.buffer.get_access<sycl::access_mode::read>(h);
+      auto rcv_buffer_acc = rcv_buffer.buffer.get_access<sycl::access_mode::write>(h);
+
+      h.host_task([=, &req_send, &req_recv](sycl::interop_handle ih) { // XXX pass handle arg here as copy, not ref!
+        MPI_Isend(get_native_ptr_or_throw(ih, snd_buffer_acc), total_size, MPI_DOUBLE, task, tag_send, MPI_COMM_WORLD, &req_send);
+        MPI_Irecv(get_native_ptr_or_throw(ih, rcv_buffer_acc), total_size, MPI_DOUBLE, task, tag_recv, MPI_COMM_WORLD, &req_recv);
+      });
+    });
+  }
+#else
+  if (globals.config.staging_buffer) {
+    globals.context.queue.wait_and_throw();
+    MPI_Isend(snd_buffer.access_ptr<R>(total_size), total_size, MPI_DOUBLE, task, tag_send, MPI_COMM_WORLD, &req_send);
+    MPI_Irecv(rcv_buffer.access_ptr<W>(total_size), total_size, MPI_DOUBLE, task, tag_recv, MPI_COMM_WORLD, &req_recv);
+  } else {
+  #if defined(__HIPSYCL__) || defined(__OPENSYCL__)
+    auto d = globals.context.queue.get_device();
+    // Construct the buffers so that get_pointer is not nullptr, only happens once per rank for the lifetime of the program
+    if (!rcv_buffer.buffer.get_pointer(d))
+      globals.context.queue.submit([&](sycl::handler &h) { h.update(sycl::accessor{rcv_buffer.buffer, h}); }).wait_and_throw();
+    if (!snd_buffer.buffer.get_pointer(d))
+      globals.context.queue.submit([&](sycl::handler &h) { h.update(sycl::accessor{snd_buffer.buffer, h}); }).wait_and_throw();
+    // We can't use host_task here, but since we can pull out the pointers directly, if we synchronise before MPI_Waitall
+    // the desired concurrency should still be there
+    MPI_Isend(snd_buffer.buffer.get_pointer(d), total_size, MPI_DOUBLE, task, tag_send, MPI_COMM_WORLD, &req_send);
+    MPI_Irecv(rcv_buffer.buffer.get_pointer(d), total_size, MPI_DOUBLE, task, tag_recv, MPI_COMM_WORLD, &req_recv);
+  #else
+    throw std::logic_error("host_task is disabled and staging is also disabled, this won't work");
+  #endif
+  }
+#endif
+}
+
+void clover_wait_messages(global_variables &globals, int message_count, std::array<MPI_Request, 4> &request) {
+  // need to make a call to wait / sync
+#ifdef USE_HOSTTASK
+  globals.context.queue
+      .submit([&](sycl::handler &h) {
+        h.host_task([=, &request]() { // XXX pass handle arg here as copy, not ref!
+          MPI_Waitall(message_count, request.data(), MPI_STATUS_IGNORE);
+        });
+      })
+      .wait_and_throw(); // don't proceed until MPI_Waitall call is done
+#else
+  if (globals.config.staging_buffer) MPI_Waitall(message_count, request.data(), MPI_STATUS_IGNORE);
+  else {
+  #if defined(__HIPSYCL__) || defined(__OPENSYCL__)
+    globals.context.queue.wait_and_throw();
+    MPI_Waitall(message_count, request.data(), MPI_STATUS_IGNORE);
+  #else
+    throw std::logic_error("host_task is disabled and staging is also disabled, this won't work");
+  #endif
+  }
+#endif
+}
 
 void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], const int depth) {
 
@@ -79,7 +170,7 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
   int left_right_offset[NUM_FIELDS];
   int bottom_top_offset[NUM_FIELDS];
 
-  MPI_Request request[4] = {0};
+  std::array<MPI_Request, 4> request = {};
   int message_count = 0;
 
   int end_pack_index_left_right = 0;
@@ -137,13 +228,7 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     message_count += 2;
   }
 
-  // make a call to wait / sync
-#ifdef USE_HOSTTASK
-  globals.context.queue.wait_and_throw();
-#else
-  // if not using host task, wait_and_throw() would have been called before each Isend/Irecv pair, so just do an MPI_Waitall here
-#endif
-  MPI_Waitall(message_count, request, MPI_STATUS_IGNORE);
+  clover_wait_messages(globals, message_count, request);
 
   // Copy back to the device
   //	Kokkos::deep_copy( left_rcv_buffer, hm_left_rcv_buffer);
@@ -199,13 +284,7 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     message_count += 2;
   }
 
-  // need to make a call to wait / sync
-#ifdef USE_HOSTTASK
-  globals.context.queue.wait_and_throw();
-#else
-  // if not using host task, wait_and_throw() would have been called before each Isend/Irecv pair, so just do an MPI_Waitall here
-#endif
-  MPI_Waitall(message_count, request, MPI_STATUS_IGNORE);
+  clover_wait_messages(globals, message_count, request);
 
   // Copy back to the device
   //	Kokkos::deep_copy(globals.chunk.bottom_rcv_buffer, hm_bottom_rcv_buffer);
@@ -230,158 +309,27 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
   }
 }
 
-template <typename A> decltype(auto) get_native_ptr_or_throw(sycl::interop_handle &ih, A accessor) {
-  using sycl::backend;
-  using T = std::remove_cv_t<typename decltype(accessor)::value_type>;
-  switch (ih.get_backend()) {
-    case backend::ext_oneapi_level_zero: return reinterpret_cast<T *>(ih.get_native_mem<backend::ext_oneapi_level_zero>(accessor));
-#ifdef SYCL_EXT_ONEAPI_BACKEND_cuda
-    case backend::ext_oneapi_cuda: return reinterpret_cast<T *>(ih.get_native_mem<backend::ext_oneapi_cuda>(accessor));
-#endif
-#ifdef SYCL_EXT_ONEAPI_BACKEND_HIP
-    case backend::ext_oneapi_hip: return reinterpret_cast<T *>(ih.get_native_mem<backend::ext_oneapi_hip>(accessor));
-#endif
-    default:
-      std::stringstream ss;
-      ss << "backend " << ih.get_backend() << " does not support a pointer-based sycl::interop_handle::get_native_mem";
-      throw std::logic_error(ss.str());
-  }
-}
-
 void clover_send_recv_message_left(global_variables &globals, clover::Buffer1D<double> &left_snd_buffer,
                                    clover::Buffer1D<double> &left_rcv_buffer, int total_size, int tag_send, int tag_recv,
                                    MPI_Request &req_send, MPI_Request &req_recv) {
-
   // First copy send buffer from device to host
-  int left_task = globals.chunk.chunk_neighbours[chunk_left] - 1;
-
-#ifdef USE_HOSTTASK
-  if (globals.config.staging_buffer) {
-    globals.context.queue.submit([&](sycl::handler &h) {
-      auto left_snd_buffer_acc = left_snd_buffer.buffer.get_host_access(h, sycl::read_only);
-      auto left_rcv_buffer_acc = left_rcv_buffer.buffer.get_host_access(h, sycl::write_only);
-      h.host_task([=, &req_send, &req_recv]() { // XXX pass handle arg here as copy, not ref!
-        MPI_Isend(left_snd_buffer_acc.get_pointer(), total_size, MPI_DOUBLE, left_task, tag_send, MPI_COMM_WORLD, &req_send);
-        MPI_Irecv(left_rcv_buffer_acc.get_pointer(), total_size, MPI_DOUBLE, left_task, tag_recv, MPI_COMM_WORLD, &req_recv);
-      });
-    });
-  } else {
-    globals.context.queue.submit([&](sycl::handler &h) {
-      auto left_snd_buffer_acc = left_snd_buffer.buffer.get_access<sycl::access_mode::read>(h);
-      auto left_rcv_buffer_acc = left_rcv_buffer.buffer.get_access<sycl::access_mode::write>(h);
-      h.host_task([=, &req_send, &req_recv](sycl::interop_handle ih) { // XXX pass handle arg here as copy, not ref!
-        MPI_Isend(get_native_ptr_or_throw(ih, left_snd_buffer_acc), total_size, MPI_DOUBLE, left_task, tag_send, MPI_COMM_WORLD, &req_send);
-        MPI_Irecv(get_native_ptr_or_throw(ih, left_rcv_buffer_acc), total_size, MPI_DOUBLE, left_task, tag_recv, MPI_COMM_WORLD, &req_recv);
-      });
-    });
-  }
-#else
-  globals.context.queue.wait_and_throw();
-  MPI_Isend(left_snd_buffer.access_ptr<R>(total_size), total_size, MPI_DOUBLE, left_task, tag_send, MPI_COMM_WORLD, &req_send);
-  MPI_Irecv(left_rcv_buffer.access_ptr<W>(total_size), total_size, MPI_DOUBLE, left_task, tag_recv, MPI_COMM_WORLD, &req_recv);
-#endif
+  clover_send_recv_message(globals, chunk_left, left_snd_buffer, left_rcv_buffer, total_size, tag_send, tag_recv, req_send, req_recv);
 }
 void clover_send_recv_message_right(global_variables &globals, clover::Buffer1D<double> &right_snd_buffer,
                                     clover::Buffer1D<double> &right_rcv_buffer, int total_size, int tag_send, int tag_recv,
                                     MPI_Request &req_send, MPI_Request &req_recv) {
-
   // First copy send buffer from device to host
-  int right_task = globals.chunk.chunk_neighbours[chunk_right] - 1;
-
-#ifdef USE_HOSTTASK
-  if (globals.config.staging_buffer) {
-    globals.context.queue.submit([&](sycl::handler &h) {
-      auto right_snd_buffer_acc = right_snd_buffer.buffer.get_host_access(h, sycl::read_only);
-      auto right_rcv_buffer_acc = right_rcv_buffer.buffer.get_host_access(h, sycl::write_only);
-      h.host_task([=, &req_send, &req_recv]() { // XXX pass handle arg here as copy, not ref!
-        MPI_Isend(right_snd_buffer_acc.get_pointer(), total_size, MPI_DOUBLE, right_task, tag_send, MPI_COMM_WORLD, &req_send);
-        MPI_Irecv(right_rcv_buffer_acc.get_pointer(), total_size, MPI_DOUBLE, right_task, tag_recv, MPI_COMM_WORLD, &req_recv);
-      });
-    });
-  } else {
-    globals.context.queue.submit([&](sycl::handler &h) {
-      auto right_snd_buffer_acc = right_snd_buffer.buffer.get_access<sycl::access_mode::read>(h);
-      auto right_rcv_buffer_acc = right_rcv_buffer.buffer.get_access<sycl::access_mode::write>(h);
-      h.host_task([=, &req_send, &req_recv](sycl::interop_handle ih) { // XXX pass handle arg here as copy, not ref!
-        MPI_Isend(get_native_ptr_or_throw(ih, right_snd_buffer_acc), total_size, MPI_DOUBLE, right_task, tag_send, MPI_COMM_WORLD,
-                  &req_send);
-        MPI_Irecv(get_native_ptr_or_throw(ih, right_rcv_buffer_acc), total_size, MPI_DOUBLE, right_task, tag_recv, MPI_COMM_WORLD,
-                  &req_recv);
-      });
-    });
-  }
-#else
-  globals.context.queue.wait_and_throw();
-  MPI_Isend(right_snd_buffer.access_ptr<R>(total_size), total_size, MPI_DOUBLE, right_task, tag_send, MPI_COMM_WORLD, &req_send);
-  MPI_Irecv(right_rcv_buffer.access_ptr<W>(total_size), total_size, MPI_DOUBLE, right_task, tag_recv, MPI_COMM_WORLD, &req_recv);
-#endif
+  clover_send_recv_message(globals, chunk_right, right_snd_buffer, right_rcv_buffer, total_size, tag_send, tag_recv, req_send, req_recv);
 }
 void clover_send_recv_message_top(global_variables &globals, clover::Buffer1D<double> &top_snd_buffer,
                                   clover::Buffer1D<double> &top_rcv_buffer, int total_size, int tag_send, int tag_recv,
                                   MPI_Request &req_send, MPI_Request &req_recv) {
-
   // First copy send buffer from device to host
-  int top_task = globals.chunk.chunk_neighbours[chunk_top] - 1;
-
-#ifdef USE_HOSTTASK
-  if (globals.config.staging_buffer) {
-    globals.context.queue.submit([&](sycl::handler &h) {
-      auto top_snd_buffer_acc = top_snd_buffer.buffer.get_host_access(h, sycl::read_only);
-      auto top_rcv_buffer_acc = top_rcv_buffer.buffer.get_host_access(h, sycl::write_only);
-      h.host_task([=, &req_send, &req_recv]() { // XXX pass handle arg here as copy, not ref!
-        MPI_Isend(top_snd_buffer_acc.get_pointer(), total_size, MPI_DOUBLE, top_task, tag_send, MPI_COMM_WORLD, &req_send);
-        MPI_Irecv(top_rcv_buffer_acc.get_pointer(), total_size, MPI_DOUBLE, top_task, tag_recv, MPI_COMM_WORLD, &req_recv);
-      });
-    });
-  } else {
-    globals.context.queue.submit([&](sycl::handler &h) {
-      auto top_snd_buffer_acc = top_snd_buffer.buffer.get_access<sycl::access_mode::read>(h);
-      auto top_rcv_buffer_acc = top_rcv_buffer.buffer.get_access<sycl::access_mode::write>(h);
-      h.host_task([=, &req_send, &req_recv](sycl::interop_handle ih) { // XXX pass handle arg here as copy, not ref!
-        MPI_Isend(get_native_ptr_or_throw(ih, top_snd_buffer_acc), total_size, MPI_DOUBLE, top_task, tag_send, MPI_COMM_WORLD, &req_send);
-        MPI_Irecv(get_native_ptr_or_throw(ih, top_rcv_buffer_acc), total_size, MPI_DOUBLE, top_task, tag_recv, MPI_COMM_WORLD, &req_recv);
-      });
-    });
-  }
-#else
-  globals.context.queue.wait_and_throw();
-  MPI_Isend(top_snd_buffer.access_ptr<R>(total_size), total_size, MPI_DOUBLE, top_task, tag_send, MPI_COMM_WORLD, &req_send);
-  MPI_Irecv(top_rcv_buffer.access_ptr<W>(total_size), total_size, MPI_DOUBLE, top_task, tag_recv, MPI_COMM_WORLD, &req_recv);
-#endif
+  clover_send_recv_message(globals, chunk_top, top_snd_buffer, top_rcv_buffer, total_size, tag_send, tag_recv, req_send, req_recv);
 }
 void clover_send_recv_message_bottom(global_variables &globals, clover::Buffer1D<double> &bottom_snd_buffer,
                                      clover::Buffer1D<double> &bottom_rcv_buffer, int total_size, int tag_send, int tag_recv,
                                      MPI_Request &req_send, MPI_Request &req_recv) {
-
   // First copy send buffer from device to host
-  int bottom_task = globals.chunk.chunk_neighbours[chunk_bottom] - 1;
-
-#ifdef USE_HOSTTASK
-  if (globals.config.staging_buffer) {
-    globals.context.queue.submit([&](sycl::handler &h) {
-      auto bottom_snd_buffer_acc = bottom_snd_buffer.buffer.get_host_access(h, sycl::read_only);
-      auto bottom_rcv_buffer_acc = bottom_rcv_buffer.buffer.get_host_access(h, sycl::write_only);
-      h.host_task([=, &req_send, &req_recv]() { // XXX pass handle arg here as copy, not ref!
-        MPI_Isend(bottom_snd_buffer_acc.get_pointer(), total_size, MPI_DOUBLE, bottom_task, tag_send, MPI_COMM_WORLD, &req_send);
-        MPI_Irecv(bottom_rcv_buffer_acc.get_pointer(), total_size, MPI_DOUBLE, bottom_task, tag_recv, MPI_COMM_WORLD, &req_recv);
-      });
-    });
-  } else {
-    globals.context.queue.submit([&](sycl::handler &h) {
-      auto bottom_snd_buffer_acc = bottom_snd_buffer.buffer.get_access<sycl::access_mode::read>(h);
-      auto bottom_rcv_buffer_acc = bottom_rcv_buffer.buffer.get_access<sycl::access_mode::write>(h);
-
-      h.host_task([=, &req_send, &req_recv](sycl::interop_handle ih) { // XXX pass handle arg here as copy, not ref!
-        MPI_Isend(get_native_ptr_or_throw(ih, bottom_snd_buffer_acc), total_size, MPI_DOUBLE, bottom_task, tag_send, MPI_COMM_WORLD,
-                  &req_send);
-        MPI_Irecv(get_native_ptr_or_throw(ih, bottom_rcv_buffer_acc), total_size, MPI_DOUBLE, bottom_task, tag_recv, MPI_COMM_WORLD,
-                  &req_recv);
-      });
-    });
-  }
-#else
-  globals.context.queue.wait_and_throw();
-  MPI_Isend(bottom_snd_buffer.access_ptr<R>(total_size), total_size, MPI_DOUBLE, bottom_task, tag_send, MPI_COMM_WORLD, &req_send);
-  MPI_Irecv(bottom_rcv_buffer.access_ptr<W>(total_size), total_size, MPI_DOUBLE, bottom_task, tag_recv, MPI_COMM_WORLD, &req_recv);
-#endif
+  clover_send_recv_message(globals, chunk_bottom, bottom_snd_buffer, bottom_rcv_buffer, total_size, tag_send, tag_recv, req_send, req_recv);
 }

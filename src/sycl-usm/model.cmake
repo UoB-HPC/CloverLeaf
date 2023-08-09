@@ -97,6 +97,15 @@ macro(setup)
         message(FATAL_ERROR "SYCL_COMPILER=${SYCL_COMPILER} is unsupported")
     endif ()
 
+    list(APPEND IMPL_SOURCES
+            src/${MODEL_LOWER}/update_tile_halo_kernel_t.cpp
+            src/${MODEL_LOWER}/update_tile_halo_kernel_l.cpp
+            src/${MODEL_LOWER}/update_tile_halo_kernel_r.cpp
+            src/${MODEL_LOWER}/update_tile_halo_kernel_b.cpp
+            src/${MODEL_LOWER}/update_halo_1.cpp
+            src/${MODEL_LOWER}/update_halo_2.cpp
+    )
+
 endmacro()
 
 

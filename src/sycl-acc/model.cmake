@@ -26,6 +26,11 @@ register_flag_optional(USE_RANGE2D_MODE
            RANGE2D_ROUND  - Round all dimensions in a range<2> to multiples of 32"
         "RANGE2D_NORMAL")
 
+register_flag_optional(USE_SYCL2020_REDUCTION
+        "Whether to use reduction introduced in SYCO2020"
+        "ON")
+
+
 register_flag_optional(USE_HOSTTASK
         "Whether to use SYCL2020 host_task for MPI related calls or fallback to queue.wait() not all SYCL compilers support this"
         "OFF")
@@ -39,6 +44,10 @@ macro(setup)
 
     if (USE_RANGE2D_MODE)
         register_definitions(RANGE2D_MODE=${USE_RANGE2D_MODE})
+    endif ()
+
+    if (USE_SYCL2020_REDUCTION)
+        register_definitions(USE_SYCL2020_REDUCTION)
     endif ()
 
     if (USE_HOSTTASK)
@@ -94,6 +103,15 @@ macro(setup)
     else ()
         message(FATAL_ERROR "SYCL_COMPILER=${SYCL_COMPILER} is unsupported")
     endif ()
+
+    list(APPEND IMPL_SOURCES
+            src/${MODEL_LOWER}/update_tile_halo_kernel_t.cpp
+            src/${MODEL_LOWER}/update_tile_halo_kernel_l.cpp
+            src/${MODEL_LOWER}/update_tile_halo_kernel_r.cpp
+            src/${MODEL_LOWER}/update_tile_halo_kernel_b.cpp
+            src/${MODEL_LOWER}/update_halo_1.cpp
+            src/${MODEL_LOWER}/update_halo_2.cpp
+    )
 
 endmacro()
 

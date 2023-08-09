@@ -37,8 +37,7 @@ void PdV_kernel(sycl::queue &queue, bool predict, int x_min, int x_max, int y_mi
                 clover::Buffer2D<double> &yarea, clover::Buffer2D<double> &volume, clover::Buffer2D<double> &density0,
                 clover::Buffer2D<double> &density1, clover::Buffer2D<double> &energy0, clover::Buffer2D<double> &energy1,
                 clover::Buffer2D<double> &pressure, clover::Buffer2D<double> &viscosity, clover::Buffer2D<double> &xvel0,
-                clover::Buffer2D<double> &xvel1, clover::Buffer2D<double> &yvel0, clover::Buffer2D<double> &yvel1,
-                clover::Buffer2D<double> &volume_change) {
+                clover::Buffer2D<double> &xvel1, clover::Buffer2D<double> &yvel0, clover::Buffer2D<double> &yvel1) {
 
   // DO k=y_min,y_max
   //   DO j=x_min,x_max
@@ -94,7 +93,7 @@ void PdV(global_variables &globals, bool predict) {
     tile_type &t = globals.chunk.tiles[tile];
     PdV_kernel(globals.context.queue, predict, t.info.t_xmin, t.info.t_xmax, t.info.t_ymin, t.info.t_ymax, globals.dt, t.field.xarea,
                t.field.yarea, t.field.volume, t.field.density0, t.field.density1, t.field.energy0, t.field.energy1, t.field.pressure,
-               t.field.viscosity, t.field.xvel0, t.field.xvel1, t.field.yvel0, t.field.yvel1, t.field.work_array1);
+               t.field.viscosity, t.field.xvel0, t.field.xvel1, t.field.yvel0, t.field.yvel1);
   }
 
   clover_check_error(globals.error_condition);

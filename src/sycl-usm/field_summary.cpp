@@ -77,12 +77,18 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
     int xmin = t.info.t_xmin;
     auto &field = t.field;
 
+#if defined(__HIPSYCL__) || defined(__OPENSYCL__)
+    auto reduction = sycl::reduction(summaryResults.data, {}, sycl::plus<summary>());
+#else
+    auto reduction =
+        sycl::reduction(summaryResults.data, {}, sycl::plus<>(), sycl::property::reduction::initialize_to_identity());
+#endif
+
     globals.context.queue
         .submit([&](sycl::handler &cgh) {
           cgh.parallel_for(                                          //
               sycl::range<1>((ymax - ymin + 1) * (xmax - xmin + 1)), //
-              sycl::reduction(summaryResults.data, {}, sycl::plus<>(),
-                              sycl::property::reduction::initialize_to_identity()), //
+              reduction,                                             //
               [=](sycl::id<1> idx, auto &acc) {
                 const size_t j = xmin + 1 + idx[0] % (xmax - xmin + 1);
                 const size_t k = ymin + 1 + idx[0] / (xmax - xmin + 1);

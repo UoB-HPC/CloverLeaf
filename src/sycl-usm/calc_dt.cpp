@@ -52,12 +52,19 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
   // y = y_min + 1  |  y_max + 2
 
   clover::Buffer1D<double> minResults(ctx, 1);
+
+#if defined(__HIPSYCL__) || defined(__OPENSYCL__)
+  auto reduction = sycl::reduction(minResults.data, dt_min_val, sycl::minimum<double>());
+#else
+  auto reduction =
+      sycl::reduction(minResults.data, dt_min_val, sycl::minimum<double>(), sycl::property::reduction::initialize_to_identity());
+#endif
+
   ctx.queue
       .submit([&](sycl::handler &cgh) {
         cgh.parallel_for(                                      //
             sycl::range<1>((xEnd - xStart) * (yEnd - yStart)), //
-            sycl::reduction(minResults.data, dt_min_val, sycl::minimum<>(),
-                            sycl::property::reduction::initialize_to_identity()), //
+            reduction,                                         //
             [=](sycl::id<1> idx, auto &acc) {
               const auto i = xStart + (idx[0] % sizeX);
               const auto j = yStart + (idx[0] / sizeX);
