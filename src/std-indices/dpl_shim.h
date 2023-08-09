@@ -67,8 +67,16 @@ static constexpr auto EXEC_POLICY = std::execution::par_unseq;
 
 #ifdef USE_STD_PTR_ALLOC_DEALLOC
 
-template <typename T> T *alloc_raw(size_t size) { return static_cast<T *>(std::malloc(size * sizeof(T))); }
+  #if defined(__HIPSYCL__) || defined(__OPENSYCL__)
 
+template <typename T> T *alloc_raw(size_t size) { return new T[size]; }
+template <typename T> void dealloc_raw(T *ptr) { delete ptr; }
+
+  #else
+
+template <typename T> T *alloc_raw(size_t size) { return static_cast<T *>(std::malloc(size * sizeof(T))); }
 template <typename T> void dealloc_raw(T *ptr) { std::free(ptr); }
+
+  #endif
 
 #endif
