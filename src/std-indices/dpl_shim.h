@@ -70,7 +70,7 @@ static constexpr auto EXEC_POLICY = std::execution::par_unseq;
   #if defined(__HIPSYCL__) || defined(__OPENSYCL__)
 
 template <typename T> T *alloc_raw(size_t size) { return new T[size]; }
-template <typename T> void dealloc_raw(T *ptr) { delete ptr; }
+template <typename T> void dealloc_raw(T *ptr) { delete[] ptr; }
 
   #else
 
