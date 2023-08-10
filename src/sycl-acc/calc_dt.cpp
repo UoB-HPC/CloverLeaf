@@ -49,6 +49,8 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
 
 #ifdef USE_SYCL2020_REDUCTION
   clover::Buffer1D<double> minResults(ctx, 1);
+  minResults.access()[0] = dt_min_val;
+
   clover::execute(ctx.queue, [&](handler &h) {
     auto xarea_ = xarea.access<R>(h);
     auto yarea_ = yarea.access<R>(h);
@@ -61,6 +63,13 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
     auto xvel0_ = xvel0.access<R>(h);
     auto yvel0_ = yvel0.access<R>(h);
 
+  #if defined(__HIPSYCL__) || defined(__OPENSYCL__)
+    h.parallel_for(                                                                     //
+        sycl::range<2>(sycl::range<2>(policy.sizeX, policy.sizeY)),                     //
+        sycl::reduction(minResults.access<RW>(h), dt_min_val, sycl::minimum<double>()), //
+        [=](sycl::item<2> idxNoOffset, auto &acc) {
+          const auto idx = clover::offset(idxNoOffset, policy.fromX, policy.fromY);
+  #else
     // FIXME maxThreadPerBlock = N with nd_range launch is a workaround for https://github.com/intel/llvm/issues/8414
     //  A normal non-nd_range launch blows the register budget as the thread-per-block is passed directly to CUDA PI.
     //  It's unclear how this workaround would affect other platforms.
@@ -72,20 +81,13 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
     auto uniformLocalY = policy.sizeY % localY == 0 ? localY : policy.sizeY + (localY - policy.sizeY % localY);
     uniformLocalX = uniformLocalX >= policy.sizeX ? 1 : uniformLocalX;
     uniformLocalY = uniformLocalY >= policy.sizeY ? 1 : uniformLocalY;
-  #if defined(__HIPSYCL__) || defined(__OPENSYCL__)
-    auto reduction = sycl::reduction(minResults.access<RW>(h), dt_min_val, sycl::minimum<double>());
-
-  #else
-    auto reduction =  sycl::reduction(minResults.buffer, h, dt_min_val, sycl::minimum<>(),
-                        sycl::property::reduction::initialize_to_identity());
-  #endif
-
     h.parallel_for(                                                                                                  //
         sycl::nd_range<2>(sycl::range<2>(policy.sizeX, policy.sizeY), sycl::range<2>(uniformLocalX, uniformLocalY)), //
-        reduction,                                                                                                   //
+        sycl::reduction(minResults.buffer, h, dt_min_val, sycl::minimum<>(),
+                        sycl::property::reduction::initialize_to_identity()), //
         [=](sycl::nd_item<2> idxNoOffset, auto &acc) {
           const auto idx = clover::offset(idxNoOffset.get_global_id(), policy.fromX, policy.fromY);
-
+  #endif
           double dsx = celldx_[idx[0]];
           double dsy = celldy_[idx[1]];
 

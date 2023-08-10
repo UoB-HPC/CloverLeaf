@@ -38,7 +38,7 @@ constexpr sycl::access::mode W = sycl::access::mode::write;
 constexpr sycl::access::mode RW = sycl::access::mode::read_write;
 
 // #define SYCL_DEBUG // enable for debugging SYCL related things, also syncs kernel calls
-#define SYNC_KERNELS // enable for fully synchronous (e.g queue.wait_and_throw()) kernel calls
+// #define SYNC_KERNELS // enable for fully synchronous (e.g queue.wait_and_throw()) kernel calls
 
 namespace clover {
 

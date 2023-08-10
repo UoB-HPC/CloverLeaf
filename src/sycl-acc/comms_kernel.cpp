@@ -131,6 +131,14 @@ void clover_send_recv_message(global_variables &globals, chunk_neighbour_type tp
       globals.context.queue.submit([&](sycl::handler &h) { h.update(sycl::accessor{snd_buffer.buffer, h}); }).wait_and_throw();
     // We can't use host_task here, but since we can pull out the pointers directly, if we synchronise before MPI_Waitall
     // the desired concurrency should still be there
+    globals.context.queue.submit([&](sycl::handler &h) {
+                           h.update(sycl::accessor{snd_buffer.buffer, h, sycl::read_only});
+                         })
+        .wait_and_throw();
+    globals.context.queue.submit([&](sycl::handler &h) {
+                           h.update(sycl::accessor{rcv_buffer.buffer, h, sycl::write_only});
+                         })
+        .wait_and_throw();
     MPI_Isend(snd_buffer.buffer.get_pointer(d), total_size, MPI_DOUBLE, task, tag_send, MPI_COMM_WORLD, &req_send);
     MPI_Irecv(rcv_buffer.buffer.get_pointer(d), total_size, MPI_DOUBLE, task, tag_recv, MPI_COMM_WORLD, &req_recv);
   #else

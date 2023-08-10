@@ -30,7 +30,7 @@ if (NOT MODEL)
     #    set(USE_TBB ON)
     #    set(ENABLE_MPI ON)
 
-    set(MODEL sycl-usm)
+    set(MODEL sycl-acc)
     set(SYCL_COMPILER ONEAPI-ICPX)
 
     set(ENV{HIPSYCL_TARGETS} omp.accelerated)

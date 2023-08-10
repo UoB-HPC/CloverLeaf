@@ -51,8 +51,11 @@ std::ostream &operator<<(std::ostream &os, const Range2d &d) {
 
 // writes content of the provided stream to file with name
 static void record(const std::string &name, const std::function<void(std::ofstream &)> &f) {
+  std::ios_base::sync_with_stdio(false);
   std::ofstream out;
   out.open(name, std::ofstream::out | std::ofstream::trunc);
+  std::vector<char> buffer(1024 * 1024);
+  out.rdbuf()->pubsetbuf(buffer.data(), buffer.size());
   f(out);
   out.close();
 }
@@ -60,24 +63,32 @@ static void record(const std::string &name, const std::function<void(std::ofstre
 // formats and then dumps content of 1d double buffer to stream
 static void show(std::ostream &out, const std::string &name, clover::Buffer1D<double> &buffer) {
   auto view = buffer.mirrored();
-  out << name << "(" << 1 << ") [" << buffer.extent<0>() << "]" << std::endl;
-  out << "\t";
-  for (double i : view)
-    out << i << ", ";
-  out << std::endl;
+  out << name << "(" << 1 << ") [" << buffer.extent<0>() << "]\n";
+  if (std::all_of(view.begin(), view.end(), [](auto x) { return x == 0.0; })) {
+    out << "\t(0.0)";
+  } else {
+    out << "\t";
+    for (double i : view)
+      out << i << ", ";
+  }
+  out << "\n";
 }
 
 // formats and then dumps content of 2d double buffer to stream
 static void show(std::ostream &out, const std::string &name, clover::Buffer2D<double> &buffer) {
   auto view = buffer.mirrored2();
-  out << name << "(" << 2 << ") [" << buffer.extent<0>() << "x" << buffer.extent<1>() << "]" << std::endl;
+  out << name << "(" << 2 << ") [" << buffer.extent<0>() << "x" << buffer.extent<1>() << "]\n";
   out << "\t";
-  for (size_t i = 0; i < buffer.extent<0>(); ++i) {
-    for (size_t j = 0; j < buffer.extent<1>(); ++j)
+  if (std::all_of(view.actual.begin(), view.actual.end(), [](auto x) { return x == 0.0; })) {
+    out << "\t(0.0)";
+  } else {
+    for (size_t i = 0; i < buffer.extent<0>(); ++i) {
+      for (size_t j = 0; j < buffer.extent<1>(); ++j)
         out << view(i,j) << ", ";
-    out << "\t" << std::endl;
+      out << "\t\n";
+    }
   }
-  out << std::endl;
+  out << "\n";
 }
 
 // dumps all content to file; for debugging only
@@ -101,39 +112,39 @@ void clover::dump(global_variables &g, const std::string &filename) {
   }
 
   record(dir + filename, [&](std::ostream &out) {
-    out << "Dump(tileCount = " << g.chunk.tiles.size() << ")" << std::endl;
+    out << "Dump(tileCount = " << g.chunk.tiles.size() << ")\n";
 
-    out << "error_condition" << '=' << g.error_condition << std::endl;
+    out << "error_condition" << '=' << g.error_condition << "\n";
 
-    out << "step" << '=' << g.step << std::endl;
-    out << "advect_x" << '=' << g.advect_x << std::endl;
-    out << "time" << '=' << g.time << std::endl;
+    out << "step" << '=' << g.step << "\n";
+    out << "advect_x" << '=' << g.advect_x << "\n";
+    out << "time" << '=' << g.time << "\n";
 
-    out << "dt" << '=' << g.dt << std::endl;
-    out << "dtold" << '=' << g.dtold << std::endl;
+    out << "dt" << '=' << g.dt << "\n";
+    out << "dtold" << '=' << g.dtold << "\n";
 
-    out << "complete" << '=' << g.complete << std::endl;
-    out << "jdt" << '=' << g.jdt << std::endl;
-    out << "kdt" << '=' << g.kdt << std::endl;
+    out << "complete" << '=' << g.complete << "\n";
+    out << "jdt" << '=' << g.jdt << "\n";
+    out << "kdt" << '=' << g.kdt << "\n";
 
     for (size_t i = 0; i < g.chunk.tiles.size(); ++i) {
       auto &fs = g.chunk.tiles[i].field;
-      out << "\tTile[ " << i << "]:" << std::endl;
+      out << "\tTile[ " << i << "]:\n";
 
       tile_info &info = g.chunk.tiles[i].info;
       for (int l = 0; l < 4; ++l) {
-        out << "info.tile_neighbours[i]" << '=' << info.tile_neighbours[i] << std::endl;
-        out << "info.external_tile_mask[i]" << '=' << info.external_tile_mask[i] << std::endl;
+        out << "info.tile_neighbours[i]" << '=' << info.tile_neighbours[i] << "\n";
+        out << "info.external_tile_mask[i]" << '=' << info.external_tile_mask[i] << "\n";
       }
 
-      out << "info.t_xmin" << '=' << info.t_xmin << std::endl;
-      out << "info.t_xmax" << '=' << info.t_xmax << std::endl;
-      out << "info.t_ymin" << '=' << info.t_ymin << std::endl;
-      out << "info.t_ymax" << '=' << info.t_ymax << std::endl;
-      out << "info.t_left" << '=' << info.t_left << std::endl;
-      out << "info.t_right" << '=' << info.t_right << std::endl;
-      out << "info.t_bottom" << '=' << info.t_bottom << std::endl;
-      out << "info.t_top" << '=' << info.t_top << std::endl;
+      out << "info.t_xmin" << '=' << info.t_xmin << "\n";
+      out << "info.t_xmax" << '=' << info.t_xmax << "\n";
+      out << "info.t_ymin" << '=' << info.t_ymin << "\n";
+      out << "info.t_ymax" << '=' << info.t_ymax << "\n";
+      out << "info.t_left" << '=' << info.t_left << "\n";
+      out << "info.t_right" << '=' << info.t_right << "\n";
+      out << "info.t_bottom" << '=' << info.t_bottom << "\n";
+      out << "info.t_top" << '=' << info.t_top << "\n";
 
       show(out, "density0", fs.density0);
       show(out, "density1", fs.density1);
@@ -171,6 +182,7 @@ void clover::dump(global_variables &g, const std::string &filename) {
       show(out, "volume", fs.volume);
       show(out, "xarea", fs.xarea);
       show(out, "yarea", fs.yarea);
+      out << std::flush;
     }
   });
 }

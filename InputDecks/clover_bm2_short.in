@@ -16,5 +16,6 @@
  max_timestep=0.04
  end_time=0.5
  end_step=87
+ test_problem 287
 
 *endclover

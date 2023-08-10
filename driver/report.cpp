@@ -74,11 +74,28 @@ void clover_report_step(global_variables &globals, parallel_ &parallel, //
     if (parallel.boss) {
       if (globals.config.test_problem >= 1) {
         double qa_diff{};
-        if (globals.config.test_problem == 1) qa_diff = std::fabs((100.0 * (ke / 1.82280367310258)) - 100.0);
-        if (globals.config.test_problem == 2) qa_diff = std::fabs((100.0 * (ke / 1.19316898756307)) - 100.0);
-        if (globals.config.test_problem == 3) qa_diff = std::fabs((100.0 * (ke / 2.58984003503994)) - 100.0);
-        if (globals.config.test_problem == 4) qa_diff = std::fabs((100.0 * (ke / 0.307475452287895)) - 100.0);
-        if (globals.config.test_problem == 5) qa_diff = std::fabs((100.0 * (ke / 4.85350315783719)) - 100.0);
+        if (globals.config.test_problem == 1) {
+          qa_diff = std::fabs((100.0 * (ke / 1.82280367310258)) - 100.0);
+        } else if (globals.config.test_problem == 2) { // bm * 87
+          qa_diff = std::fabs((100.0 * (ke / 1.19316898756307)) - 100.0);
+        } else if (globals.config.test_problem == 3) { // bm * 2955
+          qa_diff = std::fabs((100.0 * (ke / 2.58984003503994)) - 100.0);
+        } else if (globals.config.test_problem == 4) { // bm16 @ 87
+          qa_diff = std::fabs((100.0 * (ke / 0.307475452287895)) - 100.0);
+        } else if (globals.config.test_problem == 5) { // bm15 * 2955
+          qa_diff = std::fabs((100.0 * (ke / 4.85350315783719)) - 100.0);
+        } else if (globals.config.test_problem == 487) { // bm4 @ 87
+          qa_diff = std::fabs((100.0 * (ke / 6.088288e-01)) - 100.0);
+        } else if (globals.config.test_problem == 287) { // bm2 @ 87
+          qa_diff = std::fabs((100.0 * (ke / 6.062609e-01)) - 100.0);
+        } else if (globals.config.test_problem == 168) { // bm16 @ 8
+          qa_diff = std::fabs((100.0 * (ke / 2.465082e-02)) - 100.0);
+        } else {
+          qa_diff = 100;
+          std::cout << " WARNING: Unknown test problem " << globals.config.test_problem << ", validation will fail" << std::endl;
+          g_out << " WARNING: Unknown test problem " << globals.config.test_problem << ", validation will fail" << std::endl;
+        }
+
         std::cout << " Test problem " << globals.config.test_problem << " is within " << qa_diff << "% of the expected solution"
                   << std::endl;
         g_out << "Test problem " << globals.config.test_problem << " is within " << qa_diff << "% of the expected solution" << std::endl;
