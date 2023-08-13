@@ -66,7 +66,7 @@ template <typename T> struct Buffer2D {
   Buffer2D(const Buffer2D<T> &that) : sizeX(that.sizeX), sizeY(that.sizeY), data(that.data) {}
   ~Buffer2D() { std::free(data); }
 
-  T &operator()(size_t i, size_t j) const { return data[j + i * sizeY]; }
+  T &operator()(size_t i, size_t j) const { return data[i + j * sizeX]; }
   T *actual() { return data; }
 
   template <size_t D> [[nodiscard]] size_t extent() const {
