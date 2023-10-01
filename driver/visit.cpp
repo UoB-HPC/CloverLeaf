@@ -25,6 +25,7 @@
 
 #include <cmath>
 #include <fstream>
+#include <sstream>
 #include <iomanip>
 
 //  @brief Generates graphics output files.
