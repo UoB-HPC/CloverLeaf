@@ -66,19 +66,19 @@ void build_field(global_variables &globals) {
     double *xarea = field.xarea.data;
     double *yarea = field.yarea.data;
 
-#pragma omp target enter data map(alloc : density0[ : field.density0.N()]) map(alloc : density1[ : field.density1.N()])                    \
-    map(alloc : energy0[ : field.energy0.N()]) map(alloc : energy1[ : field.energy1.N()]) map(alloc : pressure[ : field.pressure.N()])     \
-    map(alloc : viscosity[ : field.viscosity.N()]) map(alloc : soundspeed[ : field.soundspeed.N()]) map(alloc : yvel0[ : field.yvel0.N()]) \
-    map(alloc : yvel1[ : field.yvel1.N()]) map(alloc : xvel0[ : field.xvel0.N()]) map(alloc : xvel1[ : field.xvel1.N()])                   \
-    map(alloc : vol_flux_x[ : field.vol_flux_x.N()]) map(alloc : vol_flux_y[ : field.vol_flux_y.N()])                                      \
-    map(alloc : mass_flux_x[ : field.mass_flux_x.N()]) map(alloc : mass_flux_y[ : field.mass_flux_y.N()])                                  \
-    map(alloc : work_array1[ : field.work_array1.N()]) map(alloc : work_array2[ : field.work_array2.N()])                                  \
-    map(alloc : work_array3[ : field.work_array3.N()]) map(alloc : work_array4[ : field.work_array4.N()])                                  \
-    map(alloc : work_array5[ : field.work_array5.N()]) map(alloc : work_array6[ : field.work_array6.N()])                                  \
-    map(alloc : work_array7[ : field.work_array7.N()]) map(alloc : cellx[ : field.cellx.N()]) map(alloc : celldx[ : field.celldx.N()])     \
-    map(alloc : celly[ : field.celly.N()]) map(alloc : celldy[ : field.celldy.N()]) map(alloc : vertexx[ : field.vertexx.N()])             \
-    map(alloc : vertexdx[ : field.vertexdx.N()]) map(alloc : vertexy[ : field.vertexy.N()]) map(alloc : vertexdy[ : field.vertexdy.N()])   \
-    map(alloc : volume[ : field.volume.N()]) map(alloc : xarea[ : field.xarea.N()]) map(alloc : yarea[ : field.yarea.N()])
+#pragma acc enter data create(density0[ : field.density0.N()]) create(density1[ : field.density1.N()])                    \
+    create(energy0[ : field.energy0.N()]) create(energy1[ : field.energy1.N()]) create(pressure[ : field.pressure.N()])     \
+    create(viscosity[ : field.viscosity.N()]) create(soundspeed[ : field.soundspeed.N()]) create(yvel0[ : field.yvel0.N()]) \
+    create(yvel1[ : field.yvel1.N()]) create(xvel0[ : field.xvel0.N()]) create(xvel1[ : field.xvel1.N()])                   \
+    create(vol_flux_x[ : field.vol_flux_x.N()]) create(vol_flux_y[ : field.vol_flux_y.N()])                                      \
+    create(mass_flux_x[ : field.mass_flux_x.N()]) create(mass_flux_y[ : field.mass_flux_y.N()])                                  \
+    create(work_array1[ : field.work_array1.N()]) create(work_array2[ : field.work_array2.N()])                                  \
+    create(work_array3[ : field.work_array3.N()]) create(work_array4[ : field.work_array4.N()])                                  \
+    create(work_array5[ : field.work_array5.N()]) create(work_array6[ : field.work_array6.N()])                                  \
+    create(work_array7[ : field.work_array7.N()]) create(cellx[ : field.cellx.N()]) create(celldx[ : field.celldx.N()])     \
+    create(celly[ : field.celly.N()]) create(celldy[ : field.celldy.N()]) create(vertexx[ : field.vertexx.N()])             \
+    create(vertexdx[ : field.vertexdx.N()]) create(vertexy[ : field.vertexy.N()]) create(vertexdy[ : field.vertexdy.N()])   \
+    create(volume[ : field.volume.N()]) create(xarea[ : field.xarea.N()]) create(yarea[ : field.yarea.N()])
 
     const int xrange = (t.info.t_xmax + 2) - (t.info.t_xmin - 2) + 1;
     const int yrange = (t.info.t_ymax + 2) - (t.info.t_ymin - 2) + 1;
@@ -147,7 +147,7 @@ void build_field(global_variables &globals) {
 
     const int vels_wk_stride = field.vels_wk_stride;
 
-#pragma omp target teams distribute parallel for simd collapse(2) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(globals.context.use_target)
     for (int j = 0; j < (yrange + 1); j++) {
       for (int i = 0; i < (xrange + 1); i++) {
         work_array1[i + j * vels_wk_stride] = 0.0;
@@ -167,7 +167,7 @@ void build_field(global_variables &globals) {
     // Nested loop over (t_ymin-2:t_ymax+2) and (t_xmin-2:t_xmax+2) inclusive
     const int base_stride = field.base_stride;
 
-#pragma omp target teams distribute parallel for simd collapse(2) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(globals.context.use_target)
     for (int j = 0; j < (yrange); j++) {
       for (int i = 0; i < (xrange); i++) {
         density0[i + j * base_stride] = 0.0;
@@ -184,7 +184,7 @@ void build_field(global_variables &globals) {
     // Nested loop over (t_ymin-2:t_ymax+2) and (t_xmin-2:t_xmax+3) inclusive
     const int flux_x_stride = field.flux_x_stride;
 
-#pragma omp target teams distribute parallel for simd collapse(2) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(globals.context.use_target)
     for (int j = 0; j < (yrange); j++) {
       for (int i = 0; i < (xrange); i++) {
         vol_flux_x[i + j * flux_x_stride] = 0.0;
@@ -196,7 +196,7 @@ void build_field(global_variables &globals) {
     // Nested loop over (t_ymin-2:t_ymax+3) and (t_xmin-2:t_xmax+2) inclusive
     const int flux_y_stride = field.flux_y_stride;
 
-#pragma omp target teams distribute parallel for simd collapse(2) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(globals.context.use_target)
     for (int j = 0; j < (yrange + 1); j++) {
       for (int i = 0; i < (xrange); i++) {
         vol_flux_y[i + j * flux_y_stride] = 0.0;
@@ -206,28 +206,28 @@ void build_field(global_variables &globals) {
     }
 
 // (t_xmin-2:t_xmax+2) inclusive
-#pragma omp target teams distribute parallel for simd clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector default(present) clover_use_target(globals.context.use_target)
     for (int id = 0; id < (xrange); id++) {
       cellx[id] = 0.0;
       celldx[id] = 0.0;
     }
 
 // (t_ymin-2:t_ymax+2) inclusive
-#pragma omp target teams distribute parallel for simd clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector default(present) clover_use_target(globals.context.use_target)
     for (int id = 0; id < (yrange); id++) {
       celly[id] = 0.0;
       celldy[id] = 0.0;
     }
 
 // (t_xmin-2:t_xmax+3) inclusive
-#pragma omp target teams distribute parallel for simd clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector default(present) clover_use_target(globals.context.use_target)
     for (int id = 0; id < (xrange + 1); id++) {
       vertexx[id] = 0.0;
       vertexdx[id] = 0.0;
     }
 
 // (t_ymin-2:t_ymax+3) inclusive
-#pragma omp target teams distribute parallel for simd clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector default(present) clover_use_target(globals.context.use_target)
     for (int id = 0; id < (yrange + 1); id++) {
       vertexy[id] = 0.0;
       vertexdy[id] = 0.0;

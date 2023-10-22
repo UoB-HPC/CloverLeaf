@@ -51,7 +51,7 @@ void accelerate_kernel(bool use_target, int x_min, int x_max, int y_min, int y_m
   double *xvel1 = field.xvel1.data;
   double *yvel1 = field.yvel1.data;
 
-#pragma omp target teams distribute parallel for simd collapse(2) clover_use_target(use_target)
+#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(use_target)
   for (int j = (y_min + 1); j < (y_max + 1 + 2); j++) {
     for (int i = (x_min + 1); i < (x_max + 1 + 2); i++) {
       double stepbymass_s = halfdt / ((density0[(i - 1) + (j - 1) * base_stride] * volume[(i - 1) + (j - 1) * base_stride] +

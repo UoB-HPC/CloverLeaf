@@ -83,8 +83,8 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
     double *xvel0 = field.xvel0.data;
     double *yvel0 = field.yvel0.data;
 
-#pragma omp target teams distribute parallel for simd clover_use_target(globals.context.use_target) map(tofrom : vol) map(tofrom : mass)   \
-    map(tofrom : ie) map(tofrom : ke) map(tofrom : press) reduction(+ : vol, mass, ie, ke, press)
+#pragma acc parallel loop gang worker vector default(present) clover_use_target(globals.context.use_target) \
+    copy(vol, mass, ie, ke, press) reduction(+ : vol, mass, ie, ke, press)
     for (int idx = 0; idx < ((ymax - ymin + 1) * (xmax - xmin + 1)); idx++) {
       const int j = xmin + 1 + idx % (xmax - xmin + 1);
       const int k = ymin + 1 + idx / (xmax - xmin + 1);

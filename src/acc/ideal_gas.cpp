@@ -41,7 +41,7 @@ void ideal_gas_kernel(bool use_target, int x_min, int x_max, int y_min, int y_ma
   double *pressure = field.pressure.data;
   double *soundspeed = field.soundspeed.data;
 
-#pragma omp target teams distribute parallel for simd collapse(2) clover_use_target(use_target)
+#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(use_target)
   for (int j = (y_min + 1); j < (y_max + 2); j++) {
     for (int i = (x_min + 1); i < (x_max + 2); i++) {
       double v = 1.0 / density[i + j * base_stride];

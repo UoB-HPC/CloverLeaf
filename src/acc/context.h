@@ -30,7 +30,7 @@
 #define SYNC_KERNELS // enable for fully synchronous (e.g queue.wait_and_throw()) kernel calls
 #define USE_COND_TARGET
 #ifdef USE_COND_TARGET
-  #define clover_use_target(cond) if (target : (cond))
+  #define clover_use_target(cond) if (cond)
 #else
   #define clover_use_target(cond) /*no-op*/
 #endif

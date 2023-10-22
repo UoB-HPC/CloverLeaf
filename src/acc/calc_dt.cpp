@@ -57,10 +57,10 @@ void calc_dt_kernel(bool use_target, int x_min, int x_max, int y_min, int y_max,
   double *xvel0 = field.xvel0.data;
   double *yvel0 = field.yvel0.data;
 
-  // XXX See https://forums.developer.nvidia.com/t/nvc-f-0000-internal-compiler-error-unhandled-size-for-preparing-max-constant/221740
-  double dt_min_val0 = dt_min_val;
-#pragma omp target teams distribute parallel for simd collapse(2) clover_use_target(use_target) map(tofrom : dt_min_val)                   \
-    reduction(min : dt_min_val0)
+/* TODO I think this loop has room for speedup? Instead of doing 1 do 5 min reductions? */
+
+#pragma acc parallel loop gang worker vector collapse(2) default(present) clover_use_target(use_target) copy(dt_min_val)                   \
+    reduction(min : dt_min_val)
   for (int j = (y_min + 1); j < (y_max + 2); j++) {
     for (int i = (x_min + 1); i < (x_max + 2); i++) {
       double dsx = celldx[i];
@@ -88,10 +88,9 @@ void calc_dt_kernel(bool use_target, int x_min, int x_max, int y_min, int y_max,
         dtdivt = g_big;
       }
       double mins = fmin(dtct, fmin(dtut, fmin(dtvt, fmin(dtdivt, g_big))));
-      dt_min_val0 = fmin(mins, dt_min_val0);
+      dt_min_val = fmin(mins, dt_min_val);
     }
   }
-  dt_min_val = dt_min_val0;
 
   dtl_control = static_cast<int>(10.01 * (jk_control - static_cast<int>(jk_control)));
   jk_control = jk_control - (jk_control - (int)(jk_control));
