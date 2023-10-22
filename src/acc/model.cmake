@@ -43,6 +43,9 @@ register_flag_optional(TARGET_PROCESSOR
         "")
 
 macro(setup)
+	set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
     find_package(OpenACC REQUIRED)
 
     if(${CMAKE_VERSION} VERSION_LESS "3.16.0")
