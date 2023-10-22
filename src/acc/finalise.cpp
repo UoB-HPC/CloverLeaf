@@ -60,14 +60,9 @@ void finalise(global_variables &globals) {
     double *xarea = field.xarea.data;
     double *yarea = field.yarea.data;
 
-#pragma omp target exit data map(release : density0[ : 0]) map(release : density1[ : 0]) map(release : energy0[ : 0])                      \
-    map(release : energy1[ : 0]) map(release : pressure[ : 0]) map(release : viscosity[ : 0]) map(release : soundspeed[ : 0])              \
-    map(release : yvel0[ : 0]) map(release : yvel1[ : 0]) map(release : xvel0[ : 0]) map(release : xvel1[ : 0])                            \
-    map(release : vol_flux_x[ : 0]) map(release : vol_flux_y[ : 0]) map(release : mass_flux_x[ : 0]) map(release : mass_flux_y[ : 0])      \
-    map(release : work_array1[ : 0]) map(release : work_array2[ : 0]) map(release : work_array3[ : 0]) map(release : work_array4[ : 0])    \
-    map(release : work_array5[ : 0]) map(release : work_array6[ : 0]) map(release : work_array7[ : 0]) map(release : cellx[ : 0])          \
-    map(release : celldx[ : 0]) map(release : celly[ : 0]) map(release : celldy[ : 0]) map(release : vertexx[ : 0])                        \
-    map(release : vertexdx[ : 0]) map(release : vertexy[ : 0]) map(release : vertexdy[ : 0]) map(release : volume[ : 0])                   \
-    map(release : xarea[ : 0]) map(release : yarea[ : 0])
+#pragma acc exit data delete(density0, density1, energy0, energy1, pressure, viscosity, \
+	soundspeed, yvel0, yvel1, xvel0, xvel1, vol_flux_x, vol_flux_y, mass_flux_x, mass_flux_y, \
+    work_array1, work_array2, work_array3, work_array4, work_array5, work_array6, work_array7, \
+    cellx, celldx, celly, celldy, vertexx, vertexdx, vertexy, vertexdy, volume, xarea, yarea)
   }
 }
