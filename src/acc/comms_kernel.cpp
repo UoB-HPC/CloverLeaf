@@ -114,6 +114,7 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     create(right_rcv[ : right_rcv_buffer.N()]) create(right_snd[ : right_snd_buffer.N()])                                        \
     create(top_rcv[ : top_rcv_buffer.N()]) create(top_snd[ : top_snd_buffer.N()])                                                \
     create(bottom_rcv[ : bottom_rcv_buffer.N()]) create(bottom_snd[ : bottom_snd_buffer.N()])
+  {
 
   if (globals.chunk.chunk_neighbours[chunk_left] != external_face) {
     // do left exchanges
@@ -232,6 +233,7 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
         clover_unpack_bottom(globals, bottom_rcv_buffer, fields, tile, depth, bottom_top_offset);
       }
     }
+  }
   }
 
 #pragma acc exit data delete(left_rcv, left_snd, right_rcv, right_snd, \
