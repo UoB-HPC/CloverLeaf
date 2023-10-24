@@ -110,10 +110,10 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
 
   bool stage = globals.config.staging_buffer;
 
-#pragma omp target enter data map(alloc : left_rcv[ : left_rcv_buffer.N()]) map(alloc : left_snd[ : left_snd_buffer.N()])                  \
-    map(alloc : right_rcv[ : right_rcv_buffer.N()]) map(alloc : right_snd[ : right_snd_buffer.N()])                                        \
-    map(alloc : top_rcv[ : top_rcv_buffer.N()]) map(alloc : top_snd[ : top_snd_buffer.N()])                                                \
-    map(alloc : bottom_rcv[ : bottom_rcv_buffer.N()]) map(alloc : bottom_snd[ : bottom_snd_buffer.N()])
+#pragma acc data create(left_rcv[ : left_rcv_buffer.N()]) create(left_snd[ : left_snd_buffer.N()])                  \
+    create(right_rcv[ : right_rcv_buffer.N()]) create(right_snd[ : right_snd_buffer.N()])                                        \
+    create(top_rcv[ : top_rcv_buffer.N()]) create(top_snd[ : top_snd_buffer.N()])                                                \
+    create(bottom_rcv[ : bottom_rcv_buffer.N()]) create(bottom_snd[ : bottom_snd_buffer.N()])
 
   if (globals.chunk.chunk_neighbours[chunk_left] != external_face) {
     // do left exchanges
@@ -125,8 +125,8 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     }
 
     // send and recv messages to the left
-#pragma omp target update if (stage) from(left_snd[ : left_snd_buffer.N()])
-#pragma omp target data if (!stage) use_device_ptr(left_snd, left_rcv)
+#pragma acc update if (stage) host(left_snd[ : left_snd_buffer.N()])
+#pragma acc data if (!stage) deviceptr(left_snd, left_rcv)
     clover_send_recv_message_left(globals, left_snd, left_rcv, end_pack_index_left_right, 1, 2, request[message_count],
                                   request[message_count + 1]);
     message_count += 2;
@@ -141,8 +141,8 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     }
 
     // send message to the right
-#pragma omp target update if (stage) from(right_snd[ : right_snd_buffer.N()])
-#pragma omp target data if (!stage) use_device_ptr(right_snd, right_rcv)
+#pragma acc update if (stage) host(right_snd[ : right_snd_buffer.N()])
+#pragma acc data if (!stage) deviceptr(right_snd, right_rcv)
     clover_send_recv_message_right(globals, right_snd, right_rcv, end_pack_index_left_right, 2, 1, request[message_count],
                                    request[message_count + 1]);
     message_count += 2;
@@ -155,7 +155,7 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
 
   // unpack in left direction
   if (globals.chunk.chunk_neighbours[chunk_left] != external_face) {
-#pragma omp target update if (stage) to(left_rcv[ : left_rcv_buffer.N()])
+#pragma acc update if (stage) device(left_rcv[ : left_rcv_buffer.N()])
     for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {
       if (globals.chunk.tiles[tile].info.external_tile_mask[tile_left] == 1) {
         clover_unpack_left(globals, left_rcv_buffer, fields, tile, depth, left_right_offset);
@@ -165,7 +165,7 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
 
   // unpack in right direction
   if (globals.chunk.chunk_neighbours[chunk_right] != external_face) {
-#pragma omp target update if (stage) to(right_rcv[ : right_rcv_buffer.N()])
+#pragma acc update if (stage) device(right_rcv[ : right_rcv_buffer.N()])
     for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {
       if (globals.chunk.tiles[tile].info.external_tile_mask[tile_right] == 1) {
         clover_unpack_right(globals, right_rcv_buffer, fields, tile, depth, left_right_offset);
@@ -186,8 +186,8 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     }
 
     // send message downwards
-#pragma omp target update if (stage) from(bottom_snd[ : bottom_snd_buffer.N()])
-#pragma omp target data if (!stage) use_device_ptr(bottom_snd, bottom_rcv)
+#pragma acc update if (stage) host(bottom_snd[ : bottom_snd_buffer.N()])
+#pragma acc data if (!stage) deviceptr(bottom_snd, bottom_rcv)
     clover_send_recv_message_bottom(globals, bottom_snd, bottom_rcv, end_pack_index_bottom_top, 3, 4, request[message_count],
                                     request[message_count + 1]);
     message_count += 2;
@@ -202,8 +202,8 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     }
 
     // send message upwards
-#pragma omp target update if (stage) from(top_snd[ : top_snd_buffer.N()])
-#pragma omp target data if (!stage) use_device_ptr(top_snd, top_rcv)
+#pragma acc update if (stage) host(top_snd[ : top_snd_buffer.N()])
+#pragma acc data if (!stage) deviceptr(top_snd, top_rcv)
     clover_send_recv_message_top(globals, top_snd, top_rcv, end_pack_index_bottom_top, 4, 3, request[message_count],
                                  request[message_count + 1]);
     message_count += 2;
@@ -216,7 +216,7 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
 
   // unpack in top direction
   if (globals.chunk.chunk_neighbours[chunk_top] != external_face) {
-#pragma omp target update to(top_rcv[ : top_rcv_buffer.N()]) if (stage)
+#pragma acc update device(top_rcv[ : top_rcv_buffer.N()]) if (stage)
     for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {
       if (globals.chunk.tiles[tile].info.external_tile_mask[tile_top] == 1) {
         clover_unpack_top(globals, top_rcv_buffer, fields, tile, depth, bottom_top_offset);
@@ -226,7 +226,7 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
 
   // unpack in bottom direction
   if (globals.chunk.chunk_neighbours[chunk_bottom] != external_face) {
-#pragma omp target update to(bottom_rcv[ : bottom_rcv_buffer.N()]) if (stage)
+#pragma acc update device(bottom_rcv[ : bottom_rcv_buffer.N()]) if (stage)
     for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {
       if (globals.chunk.tiles[tile].info.external_tile_mask[tile_bottom] == 1) {
         clover_unpack_bottom(globals, bottom_rcv_buffer, fields, tile, depth, bottom_top_offset);
@@ -234,9 +234,8 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     }
   }
 
-#pragma omp target exit data map(release : left_rcv[ : 0]) map(release : left_snd[ : 0]) map(release : right_rcv[ : 0])                    \
-    map(release : right_snd[ : 0]) map(release : top_rcv[ : 0]) map(release : top_snd[ : 0]) map(release : bottom_rcv[ : 0])               \
-    map(release : bottom_snd[ : 0])
+#pragma acc exit data delete(left_rcv, left_snd, right_rcv, right_snd, \
+							top_rcv, top_snd, bottom_rcv, bottom_snd)
 }
 
 void clover_send_recv_message_left(global_variables &globals, double *left_snd_buffer, double *left_rcv_buffer, int total_size,

@@ -28,14 +28,14 @@ CloverLeaf. If not, see http://www.gnu.org/licenses/.
 #include "read_input.h"
 
 #include <algorithm>
-#include <omp.h>
+#include <openacc.h>
 #include <sstream>
 #include <string>
 
 model create_context(bool silent, const std::vector<std::string> &args) {
 
   using device = std::pair<std::string, int>;
-  auto num_devices = omp_get_num_devices();
+  auto num_devices = acc_get_num_devices(acc_device_default);
   std::vector<device> devices(num_devices);
   for (size_t i = 0; i < devices.size(); ++i)
     devices[i] = {"target device (target:true) #" + std::to_string(i), i};
@@ -48,13 +48,13 @@ model create_context(bool silent, const std::vector<std::string> &args) {
       silent, devices, [](const auto &d) { return d.first; }, args);
 
   if (selected.second != -1) {
-    omp_set_default_device(selected.second);
+    acc_set_device_num(selected.second, acc_device_default);
   }
 
-  return model{clover::context{.use_target = selected.second != -1}, "OpenMP Target", selected.second != -1, parsed};
+  return model{clover::context{.use_target = selected.second != -1}, "OpenACC", selected.second != -1, parsed};
 }
 
 void report_context(const clover::context &ctx) {
-  std::cout << " - Device: #" << omp_get_default_device() << ")"
+  std::cout << " - Device: #" << acc_get_device_num(acc_device_default) << ")"
             << " - Target: " << (ctx.use_target ? "true" : "false") << std::endl;
 }
