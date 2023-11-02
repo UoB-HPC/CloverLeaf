@@ -110,11 +110,10 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
 
   bool stage = globals.config.staging_buffer;
 
-#pragma acc data create(left_rcv[ : left_rcv_buffer.N()]) create(left_snd[ : left_snd_buffer.N()])                  \
+#pragma acc enter data create(left_rcv[ : left_rcv_buffer.N()]) create(left_snd[ : left_snd_buffer.N()])                  \
     create(right_rcv[ : right_rcv_buffer.N()]) create(right_snd[ : right_snd_buffer.N()])                                        \
     create(top_rcv[ : top_rcv_buffer.N()]) create(top_snd[ : top_snd_buffer.N()])                                                \
     create(bottom_rcv[ : bottom_rcv_buffer.N()]) create(bottom_snd[ : bottom_snd_buffer.N()])
-  {
 
   if (globals.chunk.chunk_neighbours[chunk_left] != external_face) {
     // do left exchanges
@@ -127,7 +126,7 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
 
     // send and recv messages to the left
 #pragma acc update if (stage) host(left_snd[ : left_snd_buffer.N()])
-#pragma acc data if (!stage) deviceptr(left_snd, left_rcv)
+#pragma acc host_data if (!stage) use_device(left_snd, left_rcv)
     clover_send_recv_message_left(globals, left_snd, left_rcv, end_pack_index_left_right, 1, 2, request[message_count],
                                   request[message_count + 1]);
     message_count += 2;
@@ -143,7 +142,7 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
 
     // send message to the right
 #pragma acc update if (stage) host(right_snd[ : right_snd_buffer.N()])
-#pragma acc data if (!stage) deviceptr(right_snd, right_rcv)
+#pragma acc host_data if (!stage) use_device(right_snd, right_rcv)
     clover_send_recv_message_right(globals, right_snd, right_rcv, end_pack_index_left_right, 2, 1, request[message_count],
                                    request[message_count + 1]);
     message_count += 2;
@@ -188,7 +187,7 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
 
     // send message downwards
 #pragma acc update if (stage) host(bottom_snd[ : bottom_snd_buffer.N()])
-#pragma acc data if (!stage) deviceptr(bottom_snd, bottom_rcv)
+#pragma acc host_data if (!stage) use_device(bottom_snd, bottom_rcv)
     clover_send_recv_message_bottom(globals, bottom_snd, bottom_rcv, end_pack_index_bottom_top, 3, 4, request[message_count],
                                     request[message_count + 1]);
     message_count += 2;
@@ -204,7 +203,7 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
 
     // send message upwards
 #pragma acc update if (stage) host(top_snd[ : top_snd_buffer.N()])
-#pragma acc data if (!stage) deviceptr(top_snd, top_rcv)
+#pragma acc host_data if (!stage) use_device(top_snd, top_rcv)
     clover_send_recv_message_top(globals, top_snd, top_rcv, end_pack_index_bottom_top, 4, 3, request[message_count],
                                  request[message_count + 1]);
     message_count += 2;
@@ -233,7 +232,6 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
         clover_unpack_bottom(globals, bottom_rcv_buffer, fields, tile, depth, bottom_top_offset);
       }
     }
-  }
   }
 
 #pragma acc exit data delete(left_rcv, left_snd, right_rcv, right_snd, \
