@@ -112,8 +112,6 @@ void generate_chunk(const int tile, global_variables &globals) {
     const double *state_radius = state_radius_buffer.data;
     const int *state_geometry = state_geometry_buffer.data;
 
-/* TODO NVHPC says it can't parallelize the inner for loops
- * We can try forcing if the index calcs are unique */
 #pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(globals.context.use_target)                            \
     copyin(state_density[ : state_density_buffer.N()]) copyin(state_energy[ : state_energy_buffer.N()])                                \
     copyin(state_xvel[ : state_xvel_buffer.N()]) copyin(state_yvel[ : state_yvel_buffer.N()])                                          \

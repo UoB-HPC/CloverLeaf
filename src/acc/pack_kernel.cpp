@@ -55,8 +55,6 @@ void clover_pack_message_left(global_variables &globals, int x_min, int x_max, i
   double *left_snd = left_snd_buffer.data;
   double *field = field_buffer.data;
   const size_t field_sizex = field_buffer.nX();
-/* TODO NVHPC Compiler is also saying that it can't parallelize this loop
- * Can force if the calc of index is unique */
 #pragma acc parallel loop gang worker vector default(present) clover_use_target(globals.context.use_target)
   for (int k = (y_min - depth + 1); k < (y_max + y_inc + depth + 2); k++) {
     for (int j = 0; j < depth; ++j) {

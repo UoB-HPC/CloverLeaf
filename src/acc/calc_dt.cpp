@@ -57,8 +57,6 @@ void calc_dt_kernel(bool use_target, int x_min, int x_max, int y_min, int y_max,
   double *xvel0 = field.xvel0.data;
   double *yvel0 = field.yvel0.data;
 
-/* TODO I think this loop has room for speedup? Instead of doing 1 do 5 min reductions? */
-
 #pragma acc parallel loop gang worker vector collapse(2) default(present) clover_use_target(use_target) copy(dt_min_val)                   \
     reduction(min : dt_min_val)
   for (int j = (y_min + 1); j < (y_max + 2); j++) {
