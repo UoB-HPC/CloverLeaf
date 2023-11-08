@@ -9,6 +9,8 @@ register_flag_optional(TARGET_DEVICE
          Refer to `nvc++ --help` for the full list"
         "")
 
+register_flag_optional(MANAGED_ALLOC "Use CUDA Managed Memory" "OFF")
+
 
 register_flag_optional(CUDA_ARCH
         "[PGI/NVHPC only] Only applicable if `TARGET_DEVICE` is set to `gpu`.
@@ -71,6 +73,11 @@ macro(setup)
 
         if (TARGET_PROCESSOR)
             register_append_cxx_flags(ANY -tp=${TARGET_PROCESSOR})
+        endif ()
+
+        if (MANAGED_ALLOC)
+            register_append_cxx_flags(ANY -gpu=managed)
+			register_definitions(CLOVER_MANAGED_ALLOC)
         endif ()
 
     endif ()
