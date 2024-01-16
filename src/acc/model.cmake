@@ -11,7 +11,6 @@ register_flag_optional(TARGET_DEVICE
 
 register_flag_optional(MANAGED_ALLOC "Use CUDA Managed Memory" "OFF")
 
-
 register_flag_optional(CUDA_ARCH
         "[PGI/NVHPC only] Only applicable if `TARGET_DEVICE` is set to `gpu`.
          Nvidia architecture in ccXY format, for example, sm_70 becomes cc70, will be passed in via `-gpu=` (e.g `cc70`)
@@ -44,6 +43,11 @@ register_flag_optional(TARGET_PROCESSOR
         Refer to `nvc++ --help` for the full list"
         "")
 
+register_flag_optional(OFFLOAD_FLAGS
+   "OpenACC Offload Flags"
+   ""
+)
+
 macro(setup)
 	set(CMAKE_CXX_STANDARD 17)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -58,7 +62,6 @@ macro(setup)
     else()
         register_link_library(OpenACC::OpenACC_CXX)
     endif()
-
 
     # XXX NVHPC is really new so older Cmake thinks it's PGI, which is true
     if ((CMAKE_CXX_COMPILER_ID STREQUAL PGI) OR (CMAKE_CXX_COMPILER_ID STREQUAL NVHPC))
@@ -81,6 +84,11 @@ macro(setup)
         endif ()
 
     endif ()
-
+    
+    if(NOT "${OFFLOAD_FLAGS}" STREQUAL "")
+        separate_arguments(OFFLOAD_FLAGS)
+        register_append_cxx_flags(ANY ${OFFLOAD_FLAGS})
+        register_append_link_flags(${OFFLOAD_FLAGS})
+    endif()
 endmacro()
 
