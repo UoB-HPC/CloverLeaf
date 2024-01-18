@@ -57,7 +57,12 @@ void PdV_kernel(bool use_target, bool predict, int x_min, int x_max, int y_min, 
     double *xvel0 = field.xvel0.data;
     double *yvel0 = field.yvel0.data;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(use_target)         \
+    present(xarea[ : field.xarea.N()], yarea[ : field.yarea.N()], volume[ : field.volume.N()], \
+            density0[ : field.density0.N()], density1[ : field.density1.N()],                  \
+            energy0[ : field.energy0.N()], energy1[ : field.energy1.N()],                      \
+            pressure[ : field.pressure.N()], viscosity[ : field.viscosity.N()],                \
+            xvel0[ : field.xvel0.N()], yvel0[: field.yvel0.N()])
     for (int j = (y_min + 1); j < (y_max + 2); j++) {
       for (int i = (x_min + 1); i < (x_max + 2); i++) {
         double left_flux = (xarea[i + j * flux_x_stride] * (xvel0[i + j * vels_wk_stride] + xvel0[(i + 0) + (j + 1) * vels_wk_stride] +
@@ -101,7 +106,13 @@ void PdV_kernel(bool use_target, bool predict, int x_min, int x_max, int y_min, 
     double *yvel0 = field.yvel0.data;
     double *yvel1 = field.yvel1.data;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(use_target)         \
+    present(xarea[ : field.xarea.N()], yarea[ : field.yarea.N()], volume[ : field.volume.N()], \
+            density0[ : field.density0.N()], density1[ : field.density1.N()],                  \
+            energy0[ : field.energy0.N()], energy1[ : field.energy1.N()],                      \
+            pressure[ : field.pressure.N()], viscosity[ : field.viscosity.N()],                \
+            xvel0[ : field.xvel0.N()], xvel1[ : field.xvel1.N()],                              \
+            yvel0[: field.yvel0.N()], yvel1[ : field.yvel1.N()])
     for (int j = (y_min + 1); j < (y_max + 2); j++) {
       for (int i = (x_min + 1); i < (x_max + 2); i++) {
         double left_flux = (xarea[i + j * flux_x_stride] * (xvel0[i + j * vels_wk_stride] + xvel0[(i + 0) + (j + 1) * vels_wk_stride] +

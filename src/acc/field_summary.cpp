@@ -83,8 +83,11 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
     double *xvel0 = field.xvel0.data;
     double *yvel0 = field.yvel0.data;
 
-#pragma acc parallel loop gang worker vector default(present) clover_use_target(globals.context.use_target) \
-    copy(vol, mass, ie, ke, press) reduction(+ : vol, mass, ie, ke, press)
+#pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
+    copy(vol, mass, ie, ke, press) reduction(+ : vol, mass, ie, ke, press)                 \
+    present(volume[ : field.volume.N()], density0[ : field.density0.N()],                  \
+            energy0[ : field.energy0.N()], pressure[ : field.pressure.N()],                \
+            xvel0[ : field.xvel0.N()], yvel0[ : field.yvel0.N()])
     for (int idx = 0; idx < ((ymax - ymin + 1) * (xmax - xmin + 1)); idx++) {
       const int j = xmin + 1 + idx % (xmax - xmin + 1);
       const int k = ymin + 1 + idx / (xmax - xmin + 1);

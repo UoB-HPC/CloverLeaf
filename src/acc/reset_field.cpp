@@ -34,7 +34,9 @@ void reset_field_kernel(bool use_target, int x_min, int x_max, int y_min, int y_
   double *energy0 = field.energy0.data;
   double *energy1 = field.energy1.data;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(use_target) \
+  present(density0[ : field.density0.N()], density1[ : field.density1.N()],            \
+          energy0[ : field.energy0.N()], energy1[ : field.energy1.N()])
   for (int j = (y_min + 1); j < (y_max + 2); j++) {
     for (int i = (x_min + 1); i < (x_max + 2); i++) {
       density0[i + j * base_stride] = density1[i + j * base_stride];
@@ -50,7 +52,9 @@ void reset_field_kernel(bool use_target, int x_min, int x_max, int y_min, int y_
   double *yvel0 = field.yvel0.data;
   double *yvel1 = field.yvel1.data;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(use_target) \
+  present(xvel0[ : field.xvel0.N()], xvel1[ : field.xvel1.N()],                        \
+          yvel0[ : field.yvel0.N()], yvel1[ : field.yvel1.N()])
   for (int j = (y_min + 1); j < (y_max + 1 + 2); j++) {
     for (int i = (x_min + 1); i < (x_max + 1 + 2); i++) {
       xvel0[i + j * vels_wk_stride] = xvel1[i + j * vels_wk_stride];

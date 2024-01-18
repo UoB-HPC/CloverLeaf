@@ -43,7 +43,11 @@ void flux_calc_kernel(bool use_target, int x_min, int x_max, int y_min, int y_ma
   double *vol_flux_x = field.vol_flux_x.data;
   double *vol_flux_y = field.vol_flux_y.data;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(use_target) \
+    present(xarea[ : field.xarea.N()], yarea[ : field.yarea.N()],                      \
+            xvel0[ : field.xvel0.N()], xvel1[ : field.xvel1.N()],                      \
+            yvel0[ : field.yvel0.N()], yvel1[ : field.yvel1.N()],                      \
+            vol_flux_x[ : field.vol_flux_x.N()], vol_flux_y[ : field.vol_flux_y.N()])
   for (int j = (y_min + 1); j < (y_max + 1 + 2); j++) {
     for (int i = (x_min + 1); i < (x_max + 1 + 2); i++) {
       vol_flux_x[i + j * flux_x_stride] = 0.25 * dt * xarea[i + j * flux_x_stride] *

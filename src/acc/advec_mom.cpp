@@ -47,7 +47,10 @@ void advec_mom_kernel(bool use_target, int x_min, int x_max, int y_min, int y_ma
     double *pre_vol = field.work_array5.data;
     double *post_vol = field.work_array6.data;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(use_target) \
+    present(vol_flux_y[ : field.vol_flux_y.N()], vol_flux_x[ : field.vol_flux_x.N()],  \
+            volume[ : field.volume.N()], pre_vol[ : field.work_array5.N()],            \
+            post_vol[ : field.work_array6.N()])
     for (int j = (y_min - 2 + 1); j < (y_max + 2 + 2); j++) {
       for (int i = (x_min - 2 + 1); i < (x_max + 2 + 2); i++) {
         post_vol[i + j * vels_wk_stride] =
@@ -64,7 +67,10 @@ void advec_mom_kernel(bool use_target, int x_min, int x_max, int y_min, int y_ma
     double *pre_vol = field.work_array5.data;
     double *post_vol = field.work_array6.data;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(use_target) \
+    present(vol_flux_y[ : field.vol_flux_y.N()], vol_flux_x[ : field.vol_flux_x.N()],  \
+            volume[ : field.volume.N()], pre_vol[ : field.work_array5.N()],            \
+            post_vol[ : field.work_array6.N()])
     for (int j = (y_min - 2 + 1); j < (y_max + 2 + 2); j++) {
       for (int i = (x_min - 2 + 1); i < (x_max + 2 + 2); i++) {
         post_vol[i + j * vels_wk_stride] =
@@ -80,7 +86,9 @@ void advec_mom_kernel(bool use_target, int x_min, int x_max, int y_min, int y_ma
     double *pre_vol = field.work_array5.data;
     double *post_vol = field.work_array6.data;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(use_target) \
+    present(vol_flux_y[ : field.vol_flux_y.N()], volume[ : field.volume.N()],          \
+            pre_vol[ : field.work_array5.N()], post_vol[ : field.work_array6.N()])
     for (int j = (y_min - 2 + 1); j < (y_max + 2 + 2); j++) {
       for (int i = (x_min - 2 + 1); i < (x_max + 2 + 2); i++) {
         post_vol[i + j * vels_wk_stride] = volume[i + j * base_stride];
@@ -95,7 +103,9 @@ void advec_mom_kernel(bool use_target, int x_min, int x_max, int y_min, int y_ma
     double *pre_vol = field.work_array5.data;
     double *post_vol = field.work_array6.data;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(use_target) \
+    present(vol_flux_x[ : field.vol_flux_x.N()], volume[ : field.volume.N()],          \
+            pre_vol[ : field.work_array5.N()], post_vol[ : field.work_array6.N()])
     for (int j = (y_min - 2 + 1); j < (y_max + 2 + 2); j++) {
       for (int i = (x_min - 2 + 1); i < (x_max + 2 + 2); i++) {
         post_vol[i + j * vels_wk_stride] = volume[i + j * base_stride];
@@ -113,7 +123,8 @@ void advec_mom_kernel(bool use_target, int x_min, int x_max, int y_min, int y_ma
       double *mass_flux_x = field.mass_flux_x.data;
       double *node_flux = field.work_array1.data;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(use_target) \
+    present(mass_flux_x[ : field.mass_flux_x.N()], node_flux[ : field.work_array1.N()]) 
       for (int j = (y_min + 1); j < (y_max + 1 + 2); j++) {
         for (int i = (x_min - 2 + 1); i < (x_max + 2 + 2); i++) {
           node_flux[i + j * vels_wk_stride] =
@@ -130,7 +141,10 @@ void advec_mom_kernel(bool use_target, int x_min, int x_max, int y_min, int y_ma
       double *node_mass_pre = field.work_array3.data;
       double *post_vol = field.work_array6.data;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(use_target)   \
+    present(density1[ : field.density1.N()], node_mass_post[ : field.work_array2.N()],   \
+            node_mass_pre[ : field.work_array3.N()], post_vol[ : field.work_array6.N()], \
+            node_flux[ : field.work_array1.N()])
       for (int j = (y_min + 1); j < (y_max + 1 + 2); j++) {
         for (int i = (x_min - 1 + 1); i < (x_max + 2 + 2); i++) {
           node_mass_post[i + j * vels_wk_stride] =
@@ -154,7 +168,10 @@ void advec_mom_kernel(bool use_target, int x_min, int x_max, int y_min, int y_ma
     double *mom_flux = field.work_array4.data;
     double *celldx = field.celldx.data;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(use_target)   \
+    present(vel1[ : vel1_buffer.N()], node_flux[ : field.work_array1.N()],               \
+            node_mass_pre[ : field.work_array3.N()], mom_flux[ : field.work_array4.N()], \
+            celldx[ : field.celldx.N()])
     for (int j = (y_min + 1); j < (y_max + 1 + 2); j++) {
       for (int i = (x_min - 1 + 1); i < (x_max + 1 + 2); i++)
         ({
@@ -193,7 +210,10 @@ void advec_mom_kernel(bool use_target, int x_min, int x_max, int y_min, int y_ma
 
     double *node_mass_post = field.work_array2.data;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(use_target)   \
+    present(vel1[ : vel1_buffer.N()], node_mass_pre[ : field.work_array3.N()],           \
+            mom_flux[ : field.work_array4.N()], celldx[ : field.celldx.N()],             \
+            node_mass_post[ : field.work_array2.N()])
     for (int j = (y_min + 1); j < (y_max + 1 + 2); j++) {
       for (int i = (x_min + 1); i < (x_max + 1 + 2); i++) {
         vel1[i + j * vel1_sizex] = (vel1[i + j * vel1_sizex] * node_mass_pre[i + j * vels_wk_stride] +
@@ -209,7 +229,8 @@ void advec_mom_kernel(bool use_target, int x_min, int x_max, int y_min, int y_ma
       double *node_flux = field.work_array1.data;
       double *mass_flux_y = field.mass_flux_y.data;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(use_target) \
+    present(node_flux[ : field.work_array1.N()], mass_flux_y[ : field.mass_flux_y.N()])
       for (int j = (y_min - 2 + 1); j < (y_max + 2 + 2); j++) {
         for (int i = (x_min + 1); i < (x_max + 1 + 2); i++) {
           node_flux[i + j * vels_wk_stride] =
@@ -225,7 +246,11 @@ void advec_mom_kernel(bool use_target, int x_min, int x_max, int y_min, int y_ma
       double *node_mass_pre = field.work_array3.data;
       double *post_vol = field.work_array6.data;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(use_target)        \
+    present(node_flux[ : field.work_array1.N()], density1[ : field.density1.N()],             \
+            node_mass_post[ : field.work_array2.N()], node_mass_pre[ : field.work_array3.N()],\
+            post_vol[ : field.work_array6.N()])
+            
       for (int j = (y_min - 1 + 1); j < (y_max + 2 + 2); j++) {
         for (int i = (x_min + 1); i < (x_max + 1 + 2); i++) {
           node_mass_post[i + j * vels_wk_stride] =
@@ -249,7 +274,10 @@ void advec_mom_kernel(bool use_target, int x_min, int x_max, int y_min, int y_ma
     double *mom_flux = field.work_array4.data;
     double *celldy = field.celldy.data;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(use_target)   \
+    present(vel1[ : vel1_buffer.N()], node_mass_pre[ : field.work_array3.N()],           \
+            mom_flux[ : field.work_array4.N()], celldy[ : field.celldy.N()],             \
+            node_flux[ : field.work_array1.N()])
     for (int j = (y_min - 1 + 1); j < (y_max + 1 + 2); j++) {
       for (int i = (x_min + 1); i < (x_max + 1 + 2); i++)
         ({
@@ -288,7 +316,9 @@ void advec_mom_kernel(bool use_target, int x_min, int x_max, int y_min, int y_ma
 
     double *node_mass_post = field.work_array2.data;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(use_target)   \
+    present(vel1[ : vel1_buffer.N()], node_mass_pre[ : field.work_array3.N()],           \
+            mom_flux[ : field.work_array4.N()], node_mass_post[ : field.work_array2.N()])
     for (int j = (y_min + 1); j < (y_max + 1 + 2); j++) {
       for (int i = (x_min + 1); i < (x_max + 1 + 2); i++) {
         vel1[i + j * vel1_sizex] = (vel1[i + j * vel1_sizex] * node_mass_pre[i + j * vels_wk_stride] +

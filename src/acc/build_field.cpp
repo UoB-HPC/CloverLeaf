@@ -147,7 +147,12 @@ void build_field(global_variables &globals) {
 
     const int vels_wk_stride = field.vels_wk_stride;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(globals.context.use_target) \
+    present(work_array1[ : field.work_array1.N()], work_array2[ : field.work_array2.N()],              \
+            work_array3[ : field.work_array3.N()], work_array4[ : field.work_array4.N()],              \
+            work_array5[ : field.work_array5.N()], work_array6[ : field.work_array6.N()],              \
+            work_array7[ : field.work_array7.N()], xvel0[ : field.xvel0.N()],                          \
+            xvel1[ : field.xvel1.N()], yvel0[ : field.yvel0.N()], yvel1[ : field.yvel1.N()])
     for (int j = 0; j < (yrange + 1); j++) {
       for (int i = 0; i < (xrange + 1); i++) {
         work_array1[i + j * vels_wk_stride] = 0.0;
@@ -167,7 +172,11 @@ void build_field(global_variables &globals) {
     // Nested loop over (t_ymin-2:t_ymax+2) and (t_xmin-2:t_xmax+2) inclusive
     const int base_stride = field.base_stride;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(globals.context.use_target) \
+    present(density0[ : field.density0.N()], density1[ : field.density1.N()],                          \
+            energy0[ : field.energy0.N()], energy1[ : field.energy1.N()],                              \
+            viscosity[ : field.viscosity.N()], soundspeed[ : field.soundspeed.N()],                    \
+            volume[ : field.volume.N()], pressure[ : field.pressure.N()])
     for (int j = 0; j < (yrange); j++) {
       for (int i = 0; i < (xrange); i++) {
         density0[i + j * base_stride] = 0.0;
@@ -184,7 +193,9 @@ void build_field(global_variables &globals) {
     // Nested loop over (t_ymin-2:t_ymax+2) and (t_xmin-2:t_xmax+3) inclusive
     const int flux_x_stride = field.flux_x_stride;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(globals.context.use_target) \
+    present(vol_flux_x[ : field.vol_flux_x.N()], mass_flux_x[ : field.mass_flux_x.N()],                  \
+            xarea[ : field.xarea.N()])
     for (int j = 0; j < (yrange); j++) {
       for (int i = 0; i < (xrange); i++) {
         vol_flux_x[i + j * flux_x_stride] = 0.0;
@@ -196,7 +207,9 @@ void build_field(global_variables &globals) {
     // Nested loop over (t_ymin-2:t_ymax+3) and (t_xmin-2:t_xmax+2) inclusive
     const int flux_y_stride = field.flux_y_stride;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(globals.context.use_target) \
+    present(vol_flux_y[ : field.vol_flux_y.N()], mass_flux_y[ : field.mass_flux_y.N()],                  \
+            yarea[ : field.yarea.N()])
     for (int j = 0; j < (yrange + 1); j++) {
       for (int i = 0; i < (xrange); i++) {
         vol_flux_y[i + j * flux_y_stride] = 0.0;
@@ -206,28 +219,32 @@ void build_field(global_variables &globals) {
     }
 
 // (t_xmin-2:t_xmax+2) inclusive
-#pragma acc parallel loop gang worker vector default(present) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
+    present(cellx[ : field.cellx.N()], celldx[ : field.celldx.N()])
     for (int id = 0; id < (xrange); id++) {
       cellx[id] = 0.0;
       celldx[id] = 0.0;
     }
 
 // (t_ymin-2:t_ymax+2) inclusive
-#pragma acc parallel loop gang worker vector default(present) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
+    present(celly[ : field.celly.N()], celldy[ : field.celldy.N()])
     for (int id = 0; id < (yrange); id++) {
       celly[id] = 0.0;
       celldy[id] = 0.0;
     }
 
 // (t_xmin-2:t_xmax+3) inclusive
-#pragma acc parallel loop gang worker vector default(present) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
+    present(vertexx[ : field.vertexx.N()], vertexdx[ : field.vertexdx.N()])
     for (int id = 0; id < (xrange + 1); id++) {
       vertexx[id] = 0.0;
       vertexdx[id] = 0.0;
     }
 
 // (t_ymin-2:t_ymax+3) inclusive
-#pragma acc parallel loop gang worker vector default(present) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
+    present(vertexy[ : field.vertexy.N()], vertexdy[ : field.vertexdy.N()])
     for (int id = 0; id < (yrange + 1); id++) {
       vertexy[id] = 0.0;
       vertexdy[id] = 0.0;

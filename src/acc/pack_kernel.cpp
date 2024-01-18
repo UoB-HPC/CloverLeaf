@@ -55,7 +55,8 @@ void clover_pack_message_left(global_variables &globals, int x_min, int x_max, i
   double *left_snd = left_snd_buffer.data;
   double *field = field_buffer.data;
   const size_t field_sizex = field_buffer.nX();
-#pragma acc parallel loop gang worker vector default(present) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
+  present(left_snd[ : left_snd_buffer.N()], field[ : field_buffer.N()])
   for (int k = (y_min - depth + 1); k < (y_max + y_inc + depth + 2); k++) {
     for (int j = 0; j < depth; ++j) {
       int index = buffer_offset + j + k * depth;
@@ -91,7 +92,8 @@ void clover_unpack_message_left(global_variables &globals, int x_min, int x_max,
   double *field = field_buffer.data;
   const size_t field_sizex = field_buffer.nX();
   double *left_rcv = left_rcv_buffer.data;
-#pragma acc parallel loop gang worker vector default(present) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
+  present(left_rcv[ : left_rcv_buffer.N()], field[ : field_buffer.N()])
   for (int k = (y_min - depth + 1); k < (y_max + y_inc + depth + 2); k++) {
     for (int j = 0; j < depth; ++j) {
       int index = buffer_offset + j + k * depth;
@@ -126,7 +128,8 @@ void clover_pack_message_right(global_variables &globals, int x_min, int x_max, 
   double *right_snd = right_snd_buffer.data;
   double *field = field_buffer.data;
   const size_t field_sizex = field_buffer.nX();
-#pragma acc parallel loop gang worker vector default(present) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
+  present(right_snd[ : right_snd_buffer.N()], field[ : field_buffer.N()])
   for (int k = (y_min - depth + 1); k < (y_max + y_inc + depth + 2); k++) {
     for (int j = 0; j < depth; ++j) {
       int index = buffer_offset + j + k * depth;
@@ -165,7 +168,8 @@ void clover_unpack_message_right(global_variables &globals, int x_min, int x_max
   double *right_rcv = right_rcv_buffer.data;
   double *field = field_buffer.data;
   const size_t field_sizex = field_buffer.nX();
-#pragma acc parallel loop gang worker vector default(present) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
+  present(right_rcv[ : right_rcv_buffer.N()], field[ : field_buffer.N()])
   for (int k = (y_min - depth + 1); k < (y_max + y_inc + depth + 2); k++) {
     for (int j = 0; j < depth; ++j) {
       int index = buffer_offset + j + k * depth;
@@ -202,7 +206,8 @@ void clover_pack_message_top(global_variables &globals, int x_min, int x_max, in
     double *top_snd = top_snd_buffer.data;
     double *field = field_buffer.data;
     const size_t field_sizex = field_buffer.nX();
-#pragma acc parallel loop gang worker vector default(present) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
+  present(top_snd[ : top_snd_buffer.N()], field[ : field_buffer.N()])
     for (int j = (x_min - depth + 1); j < (x_max + x_inc + depth + 2); j++) {
       int index = buffer_offset + k + j * depth;
       top_snd[index] = field[j + (y_max + 1 - k) * field_sizex];
@@ -242,7 +247,8 @@ void clover_unpack_message_top(global_variables &globals, int x_min, int x_max, 
     double *field = field_buffer.data;
     const size_t field_sizex = field_buffer.nX();
     double *top_rcv = top_rcv_buffer.data;
-#pragma acc parallel loop gang worker vector default(present) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
+  present(top_rcv[ : top_rcv_buffer.N()], field[ : field_buffer.N()])
     for (int j = (x_min - depth + 1); j < (x_max + x_inc + depth + 2); j++) {
       int index = buffer_offset + k + j * depth;
       field[j + (y_max + y_inc + k + 2) * field_sizex] = top_rcv[index];
@@ -282,7 +288,8 @@ void clover_pack_message_bottom(global_variables &globals, int x_min, int x_max,
     double *bottom_snd = bottom_snd_buffer.data;
     double *field = field_buffer.data;
     const size_t field_sizex = field_buffer.nX();
-#pragma acc parallel loop gang worker vector default(present) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
+  present(bottom_snd[ : bottom_snd_buffer.N()], field[ : field_buffer.N()])
     for (int j = (x_min - depth + 1); j < (x_max + x_inc + depth + 2); j++) {
       int index = buffer_offset + k + j * depth;
       bottom_snd[index] = field[j + (y_min + y_inc - 1 + k + 2) * field_sizex];
@@ -318,7 +325,8 @@ void clover_unpack_message_bottom(global_variables &globals, int x_min, int x_ma
     double *field = field_buffer.data;
     const size_t field_sizex = field_buffer.nX();
     double *bottom_rcv = bottom_rcv_buffer.data;
-#pragma acc parallel loop gang worker vector default(present) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
+  present(bottom_rcv[ : bottom_rcv_buffer.N()], field[ : field_buffer.N()])
     for (int j = (x_min - depth + 1); j < (x_max + x_inc + depth + 2); j++) {
       int index = buffer_offset + k + j * depth;
       field[j + (y_min - k) * field_sizex] = bottom_rcv[index];

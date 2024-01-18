@@ -51,7 +51,12 @@ void accelerate_kernel(bool use_target, int x_min, int x_max, int y_min, int y_m
   double *xvel1 = field.xvel1.data;
   double *yvel1 = field.yvel1.data;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(use_target)        \
+    present(xarea[ : field.xarea.N()], yarea[ : field.yarea.N()],                             \
+            volume[ : field.volume.N()], density0[ : field.density0.N()],                     \
+            pressure[ : field.pressure.N()], viscosity[ : field.viscosity.N()],               \
+            xvel0[ : field.xvel0.N()], xvel1[ : field.xvel1.N()],                             \
+            yvel0[: field.yvel0.N()], yvel1[ : field.yvel1.N()])
   for (int j = (y_min + 1); j < (y_max + 1 + 2); j++) {
     for (int i = (x_min + 1); i < (x_max + 1 + 2); i++) {
       double stepbymass_s = halfdt / ((density0[(i - 1) + (j - 1) * base_stride] * volume[(i - 1) + (j - 1) * base_stride] +

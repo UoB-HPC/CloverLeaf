@@ -57,8 +57,14 @@ void calc_dt_kernel(bool use_target, int x_min, int x_max, int y_min, int y_max,
   double *xvel0 = field.xvel0.data;
   double *yvel0 = field.yvel0.data;
 
-#pragma acc parallel loop gang worker vector collapse(2) default(present) clover_use_target(use_target) copy(dt_min_val)                   \
-    reduction(min : dt_min_val)
+  double dt_min_val0 = dt_min_val;
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(use_target) \
+    copy(dt_min_val) reduction(min : dt_min_val0)                                      \
+    present(xarea[ : field.xarea.N()], yarea[ : field.yarea.N()],                      \
+            celldx[ : field.celldx.N()], celldy[ : field.celldy.N()],                  \
+            volume[ : field.volume.N()], density0[ : field.density0.N()],              \
+            viscosity[ : field.viscosity.N()], soundspeed[ : field.soundspeed.N()],    \
+            xvel0[ : field.xvel0.N()], yvel0[: field.yvel0.N()])
   for (int j = (y_min + 1); j < (y_max + 2); j++) {
     for (int i = (x_min + 1); i < (x_max + 2); i++) {
       double dsx = celldx[i];

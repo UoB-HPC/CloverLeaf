@@ -83,7 +83,9 @@ void generate_chunk(const int tile, global_variables &globals) {
   double *xvel0 = field.xvel0.data;
   double *yvel0 = field.yvel0.data;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(globals.context.use_target)
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(globals.context.use_target) \
+    present(energy0[ : field.energy0.N()], density0[ : field.density0.N()],                            \
+            xvel0[ : field.xvel0.N()], yvel0[: field.yvel0.N()])
   for (int j = 0; j < (yrange); j++) {
     for (int i = 0; i < (xrange); i++) {
       energy0[i + j * base_stride] = state_energy_0;
@@ -112,12 +114,14 @@ void generate_chunk(const int tile, global_variables &globals) {
     const double *state_radius = state_radius_buffer.data;
     const int *state_geometry = state_geometry_buffer.data;
 
-#pragma acc parallel loop gang worker vector default(present) collapse(2) clover_use_target(globals.context.use_target)                            \
+#pragma acc parallel loop gang worker vector collapse(2) clover_use_target(globals.context.use_target)                                 \
     copyin(state_density[ : state_density_buffer.N()]) copyin(state_energy[ : state_energy_buffer.N()])                                \
     copyin(state_xvel[ : state_xvel_buffer.N()]) copyin(state_yvel[ : state_yvel_buffer.N()])                                          \
     copyin(state_xmin[ : state_xmin_buffer.N()]) copyin(state_xmax[ : state_xmax_buffer.N()])                                          \
     copyin(state_ymin[ : state_ymin_buffer.N()]) copyin(state_ymax[ : state_ymax_buffer.N()])                                          \
-    copyin(state_radius[ : state_radius_buffer.N()]) copyin(state_geometry[ : state_geometry_buffer.N()])
+    copyin(state_radius[ : state_radius_buffer.N()]) copyin(state_geometry[ : state_geometry_buffer.N()])                              \
+    present(energy0[ : field.energy0.N()], density0[ : field.density0.N()], xvel0[ : field.xvel0.N()], yvel0[: field.yvel0.N()],       \
+            cellx[ : field.cellx.N()], celly[ : field.celly.N()], vertexx[ : field.vertexx.N()], vertexy[ : field.vertexy.N()])
     for (int j = 0; j < (yrange); j++) {
       for (int i = 0; i < (xrange); i++) {
         double x_cent = state_xmin[state];
