@@ -57,8 +57,9 @@ void calc_dt_kernel(bool use_target, int x_min, int x_max, int y_min, int y_max,
   double *xvel0 = field.xvel0.data;
   double *yvel0 = field.yvel0.data;
 
+  double dt_min_val0 = dt_min_val;
 #pragma acc parallel loop gang worker vector collapse(2) clover_use_target(use_target) \
-    reduction(min : dt_min_val)                                                        \
+    reduction(min : dt_min_val0)                                                       \
     present(xarea[ : field.xarea.N()], yarea[ : field.yarea.N()],                      \
             celldx[ : field.celldx.N()], celldy[ : field.celldy.N()],                  \
             volume[ : field.volume.N()], density0[ : field.density0.N()],              \
@@ -91,9 +92,11 @@ void calc_dt_kernel(bool use_target, int x_min, int x_max, int y_min, int y_max,
         dtdivt = g_big;
       }
       double mins = fmin(dtct, fmin(dtut, fmin(dtvt, fmin(dtdivt, g_big))));
-      dt_min_val = fmin(mins, dt_min_val);
+      dt_min_val0 = fmin(mins, dt_min_val0);
     }
   }
+
+  dt_min_val = dt_min_val0;
 
   dtl_control = static_cast<int>(10.01 * (jk_control - static_cast<int>(jk_control)));
   jk_control = jk_control - (jk_control - (int)(jk_control));
