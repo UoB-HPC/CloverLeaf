@@ -115,7 +115,25 @@ void visit(global_variables &globals, parallel_ &parallel) {
       u << "DIMENSIONS " << nxv << " " << nyv << " 1" << std::endl;
       u << "X_COORDINATES " << nxv << " double" << std::endl;
 
+      if (globals.profiler_on) {
+        globals.profiler.visit += timer() - kernel_time;
+        kernel_time = timer();
+      }
+
+      // JMK: These all copy data back to the host
       auto hm_vertexx = globals.chunk.tiles[tile].field.vertexx.mirrored();
+      auto hm_vertexy = globals.chunk.tiles[tile].field.vertexy.mirrored();
+      auto hm_density0 = globals.chunk.tiles[tile].field.density0.mirrored2();
+      auto hm_energy0 = globals.chunk.tiles[tile].field.energy0.mirrored2();
+      auto hm_pressure = globals.chunk.tiles[tile].field.pressure.mirrored2();
+      auto hm_viscosity = globals.chunk.tiles[tile].field.viscosity.mirrored2();
+      auto hm_xvel0 = globals.chunk.tiles[tile].field.xvel0.mirrored2();
+      auto hm_yvel0 = globals.chunk.tiles[tile].field.yvel0.mirrored2();
+
+      if (globals.profiler_on) {
+        globals.profiler.device_to_host += timer() - kernel_time;
+        kernel_time = timer();
+      }
 
       for (int j = globals.chunk.tiles[tile].info.t_xmin + 1; j <= globals.chunk.tiles[tile].info.t_xmax + 1 + 1; ++j) {
         u << hm_vertexx[j] << std::endl;
@@ -123,7 +141,6 @@ void visit(global_variables &globals, parallel_ &parallel) {
 
       u << "Y_COORDINATES " << nyv << " double" << std::endl;
 
-      auto hm_vertexy = globals.chunk.tiles[tile].field.vertexy.mirrored();
 
       for (int k = globals.chunk.tiles[tile].info.t_ymin + 1; k <= globals.chunk.tiles[tile].info.t_ymax + 1 + 1; ++k) {
         u << hm_vertexy[k] << std::endl;
@@ -135,7 +152,6 @@ void visit(global_variables &globals, parallel_ &parallel) {
       u << "CELL_DATA " << nxc * nyc << std::endl;
       u << "FIELD FieldData 4" << std::endl;
       u << "density 1 " << nxc * nyc << " double" << std::endl;
-      auto hm_density0 = globals.chunk.tiles[tile].field.density0.mirrored2();
       for (int k = globals.chunk.tiles[tile].info.t_ymin + 1; k <= globals.chunk.tiles[tile].info.t_ymax + 1; ++k) {
         for (int j = globals.chunk.tiles[tile].info.t_xmin + 1; j <= globals.chunk.tiles[tile].info.t_xmax + 1; ++j) {
           u << std::scientific << std::setprecision(3) << hm_density0(j, k) << std::endl;
@@ -143,7 +159,6 @@ void visit(global_variables &globals, parallel_ &parallel) {
       }
 
       u << "energy 1 " << nxc * nyc << " double" << std::endl;
-      auto hm_energy0 = globals.chunk.tiles[tile].field.energy0.mirrored2();
       for (int k = globals.chunk.tiles[tile].info.t_ymin + 1; k <= globals.chunk.tiles[tile].info.t_ymax + 1; ++k) {
         for (int j = globals.chunk.tiles[tile].info.t_xmin + 1; j <= globals.chunk.tiles[tile].info.t_xmax + 1; ++j) {
           u << std::scientific << std::setprecision(3) << hm_energy0(j, k) << std::endl;
@@ -151,7 +166,6 @@ void visit(global_variables &globals, parallel_ &parallel) {
       }
 
       u << "pressure 1 " << nxc * nyc << " double" << std::endl;
-      auto hm_pressure = globals.chunk.tiles[tile].field.pressure.mirrored2();
       for (int k = globals.chunk.tiles[tile].info.t_ymin + 1; k <= globals.chunk.tiles[tile].info.t_ymax + 1; ++k) {
         for (int j = globals.chunk.tiles[tile].info.t_xmin + 1; j <= globals.chunk.tiles[tile].info.t_xmax + 1; ++j) {
           u << std::scientific << std::setprecision(3) << hm_pressure(j, k) << std::endl;
@@ -159,7 +173,6 @@ void visit(global_variables &globals, parallel_ &parallel) {
       }
 
       u << "viscosity 1 " << nxc * nyc << " double" << std::endl;
-      auto hm_viscosity = globals.chunk.tiles[tile].field.viscosity.mirrored2();
       for (int k = globals.chunk.tiles[tile].info.t_ymin + 1; k <= globals.chunk.tiles[tile].info.t_ymax + 1; ++k) {
         for (int j = globals.chunk.tiles[tile].info.t_xmin + 1; j <= globals.chunk.tiles[tile].info.t_xmax + 1; ++j) {
           double temp = (std::fabs(hm_viscosity(j, k)) > 0.00000001) ? hm_viscosity(j, k) : 0.0;
@@ -170,7 +183,6 @@ void visit(global_variables &globals, parallel_ &parallel) {
       u << "POINT_DATA " << nxv * nyv << std::endl;
       u << "FIELD FieldData 2" << std::endl;
       u << "x_vel 1 " << nxv * nyv << " double" << std::endl;
-      auto hm_xvel0 = globals.chunk.tiles[tile].field.xvel0.mirrored2();
       for (int k = globals.chunk.tiles[tile].info.t_ymin + 1; k <= globals.chunk.tiles[tile].info.t_ymax + 1 + 1; ++k) {
         for (int j = globals.chunk.tiles[tile].info.t_xmin + 1; j <= globals.chunk.tiles[tile].info.t_xmax + 1 + 1; ++j) {
           double temp = (std::fabs(hm_xvel0(j, k)) > 0.00000001) ? hm_xvel0(j, k) : 0.0;
@@ -178,7 +190,6 @@ void visit(global_variables &globals, parallel_ &parallel) {
         }
       }
       u << "y_vel 1 " << nxv * nyv << " double" << std::endl;
-      auto hm_yvel0 = globals.chunk.tiles[tile].field.yvel0.mirrored2();
       for (int k = globals.chunk.tiles[tile].info.t_ymin + 1; k <= globals.chunk.tiles[tile].info.t_ymax + 1 + 1; ++k) {
         for (int j = globals.chunk.tiles[tile].info.t_xmin + 1; j <= globals.chunk.tiles[tile].info.t_xmax + 1 + 1; ++j) {
           double temp = (std::fabs(hm_yvel0(j, k)) > 0.00000001) ? hm_yvel0(j, k) : 0.0;

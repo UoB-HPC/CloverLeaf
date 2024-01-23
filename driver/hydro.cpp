@@ -105,6 +105,7 @@ void hydro(global_variables &globals, parallel_ &parallel) {
     if (globals.step == 1) first_step = timer() - step_time;
     if (globals.step == 2) second_step = timer() - step_time;
 
+    // JMK: simulation done
     if (globals.time + g_small > globals.config.end_time || globals.step >= globals.config.end_step) {
 
       globals.complete = true;
@@ -170,8 +171,13 @@ void hydro(global_variables &globals, parallel_ &parallel) {
         p.summary = totals[loc];
         clover_allgather(p.visit, totals);
         p.visit = totals[loc];
+        clover_allgather(p.host_to_device, totals);
+        p.host_to_device = totals[loc];
+        clover_allgather(p.device_to_host, totals);
+        p.device_to_host = totals[loc];
 
         if (parallel.boss) {
+          double remainder = wall_clock - kernel_total - p.host_to_device - p.device_to_host;
           auto writeProfile = [&](auto &stream) {
             stream << std::fixed << std::endl
                    << " Profiler Output        Time     Percentage" << std::endl
@@ -190,8 +196,10 @@ void hydro(global_variables &globals, parallel_ &parallel) {
                    << " Tile Halo Exchange    :" << p.tile_halo_exchange << " " << 100.0 * (p.tile_halo_exchange / wall_clock) << std::endl
                    << " Self Halo Exchange    :" << p.self_halo_exchange << " " << 100.0 * (p.self_halo_exchange / wall_clock) << std::endl
                    << " MPI Halo Exchange     :" << p.mpi_halo_exchange << " " << 100.0 * (p.mpi_halo_exchange / wall_clock) << std::endl
-                   << " Total                 :" << kernel_total << " " << 100.0 * (kernel_total / wall_clock) << std::endl
-                   << " The Rest              :" << wall_clock - kernel_total << " " << 100.0 * (wall_clock - kernel_total) / wall_clock
+                   << " Total Kernel          :" << kernel_total << " " << 100.0 * (kernel_total / wall_clock) << std::endl
+                   << " Host to Device        :" << p.host_to_device << " " << 100.0 * (p.host_to_device / wall_clock) << std::endl
+                   << " Device to Host        :" << p.device_to_host << " " << 100.0 * (p.device_to_host / wall_clock) << std::endl
+                   << " The Rest              :" << remainder << " " << 100.0 * remainder / wall_clock
                    << std::endl
                    << std::endl;
           };

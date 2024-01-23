@@ -109,7 +109,8 @@ struct grid_type {
 };
 
 struct profiler_type {
-
+  double host_to_device = 0.0;
+  double device_to_host = 0.0;
   double timestep = 0.0;
   double acceleration = 0.0;
   double PdV = 0.0;

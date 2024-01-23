@@ -19,6 +19,7 @@
 
 #include "calc_dt.h"
 #include "context.h"
+#include "../../driver/timer.h"
 #include <cmath>
 #include <numeric>
 #include <string>
@@ -92,7 +93,12 @@ void calc_dt_kernel(global_variables &globals, int x_min, int x_max, int y_min, 
     clover::reduce<double, BLOCK / 2>::run(mins, dt_min_val_buffer.data, [](auto l, auto r) { return std::fmin(l, r); });
   });
 
+  // JMK: Copies data back from device to host
+
+  //double start_time = timer();
   auto dt_min_val_host = dt_min_val_buffer.mirrored();
+  //globals.profiler.device_to_host += timer() - start_time;
+
   dt_min_val_buffer.release();
   dt_min_val = std::reduce(dt_min_val_host.begin(), dt_min_val_host.end(), g_big, [](auto l, auto r) { return std::fmin(l, r); });
 
