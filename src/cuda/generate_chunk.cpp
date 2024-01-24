@@ -30,10 +30,9 @@
 #include <cmath>
 
 void generate_chunk(const int tile, global_variables &globals) {
-  // JMK: intial host to device copy
-  double start_time;
- 
-  if (globals.profiler_on) start_time = timer();
+  // We always wan to time this, even though it's during startup, when most
+  // of the timers are turned off
+  double start_time = timer();
 
   // Need to copy the host array of state input data into a device array
   std::vector<double> state_density_vec(globals.config.number_of_states);
@@ -73,7 +72,7 @@ void generate_chunk(const int tile, global_variables &globals) {
   clover::Buffer1D<double> state_radius(globals.context, globals.config.number_of_states, state_radius_vec.data());
   clover::Buffer1D<int> state_geometry(globals.context, globals.config.number_of_states, state_geometry_vec.data());
   
-  if (globals.profiler_on) globals.profiler.host_to_device += timer() - start_time;
+  globals.profiler.host_to_device += timer() - start_time;
 
   const int x_min = globals.chunk.tiles[tile].info.t_xmin;
   const int x_max = globals.chunk.tiles[tile].info.t_xmax;

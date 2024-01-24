@@ -68,7 +68,7 @@ void timestep(global_variables &globals, parallel_ &parallel) {
   fields[field_viscosity] = 1;
   update_halo(globals, fields, 1);
 
-  if (globals.profiler_on) kernel_time = timer();
+  if (globals.profiler_on) globals.profiler.kernel_time = timer();
 
   int jldt{}, kldt{};
   double dtlp{};
@@ -91,7 +91,9 @@ void timestep(global_variables &globals, parallel_ &parallel) {
 
   //	globals.queue.wait_and_throw();
   clover_min(globals.dt);
-  if (globals.profiler_on) globals.profiler.timestep += timer() - kernel_time;
+  if (globals.profiler_on) {
+    globals.profiler.timestep += timer() - globals.profiler.kernel_time;
+  }
 
   if (globals.dt < globals.config.dtmin) small = 1;
 

@@ -116,14 +116,23 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
       clover::reduce<double, BLOCK / 2>::run(ke, ke_buffer.data, [](auto l, auto r) { return l + r; });
       clover::reduce<double, BLOCK / 2>::run(press, press_buffer.data, [](auto l, auto r) { return l + r; });
     });
+
+    if (globals.profiler_on) {
+      globals.profiler.summary += timer() - kernel_time;
+      kernel_time = timer();
+    }
+
     // JMK: Copies data back to host
-    double start_time = timer();
     auto vol_host = vol_buffer.mirrored();
     auto mass_host = mass_buffer.mirrored();
     auto ie_host = ie_buffer.mirrored();
     auto ke_host = ke_buffer.mirrored();
     auto press_host = press_buffer.mirrored();
-    double copy_time = timer() - start_time;
+
+    if (globals.profiler_on) {
+      globals.profiler.device_to_host += timer() - kernel_time;
+      kernel_time = timer();
+    }
 
     vol = std::reduce(vol_host.begin(), vol_host.end(), vol, std::plus<>());
     mass = std::reduce(mass_host.begin(), mass_host.end(), mass, std::plus<>());
