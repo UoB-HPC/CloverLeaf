@@ -112,8 +112,12 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
         .wait_and_throw();
   }
   globals.context.queue.wait_and_throw();
-  auto [vol, mass, ie, ke, press] = summaryResults[0];
 
+  summary* h_summary = (summary*) malloc(sizeof(summary));
+  globals.context.queue.memcpy(h_summary, summaryResults.data, sizeof(summary)).wait_and_throw();
+  auto [vol, mass, ie, ke, press] = h_summary[0];
+
+  std::free(h_summary);
   clover::free(globals.context.queue, summaryResults);
 
   clover_sum(vol);

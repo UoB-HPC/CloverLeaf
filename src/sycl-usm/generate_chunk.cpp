@@ -28,32 +28,72 @@
 #include "context.h"
 
 void generate_chunk(const int tile, global_variables &globals) {
-
+  
   // Need to copy the host array of state input data into a device array
-  clover::Buffer1D<double> state_density(globals.context, globals.config.number_of_states);
-  clover::Buffer1D<double> state_energy(globals.context, globals.config.number_of_states);
-  clover::Buffer1D<double> state_xvel(globals.context, globals.config.number_of_states);
-  clover::Buffer1D<double> state_yvel(globals.context, globals.config.number_of_states);
-  clover::Buffer1D<double> state_xmin(globals.context, globals.config.number_of_states);
-  clover::Buffer1D<double> state_xmax(globals.context, globals.config.number_of_states);
-  clover::Buffer1D<double> state_ymin(globals.context, globals.config.number_of_states);
-  clover::Buffer1D<double> state_ymax(globals.context, globals.config.number_of_states);
-  clover::Buffer1D<double> state_radius(globals.context, globals.config.number_of_states);
-  clover::Buffer1D<int> state_geometry(globals.context, globals.config.number_of_states);
+  std::vector<double> h_state_density(globals.config.number_of_states);
+  std::vector<double> h_state_energy(globals.config.number_of_states);
+  std::vector<double> h_state_xvel(globals.config.number_of_states);
+  std::vector<double> h_state_yvel(globals.config.number_of_states);
+  std::vector<double> h_state_xmin(globals.config.number_of_states);
+  std::vector<double> h_state_xmax(globals.config.number_of_states);
+  std::vector<double> h_state_ymin(globals.config.number_of_states);
+  std::vector<double> h_state_ymax(globals.config.number_of_states);
+  std::vector<double> h_state_radius(globals.config.number_of_states);
+  std::vector<int> h_state_geometry(globals.config.number_of_states);
+
 
   // Copy the data to the new views
   for (int state = 0; state < globals.config.number_of_states; ++state) {
-    state_density[state] = globals.config.states[state].density;
-    state_energy[state] = globals.config.states[state].energy;
-    state_xvel[state] = globals.config.states[state].xvel;
-    state_yvel[state] = globals.config.states[state].yvel;
-    state_xmin[state] = globals.config.states[state].xmin;
-    state_xmax[state] = globals.config.states[state].xmax;
-    state_ymin[state] = globals.config.states[state].ymin;
-    state_ymax[state] = globals.config.states[state].ymax;
-    state_radius[state] = globals.config.states[state].radius;
-    state_geometry[state] = globals.config.states[state].geometry;
+    h_state_density[state] = globals.config.states[state].density;
+    h_state_energy[state] = globals.config.states[state].energy;
+    h_state_xvel[state] = globals.config.states[state].xvel;
+    h_state_yvel[state] = globals.config.states[state].yvel;
+    h_state_xmin[state] = globals.config.states[state].xmin;
+    h_state_xmax[state] = globals.config.states[state].xmax;
+    h_state_ymin[state] = globals.config.states[state].ymin;
+    h_state_ymax[state] = globals.config.states[state].ymax;
+    h_state_radius[state] = globals.config.states[state].radius;
+    h_state_geometry[state] = globals.config.states[state].geometry;
   }
+
+  auto ctx = globals.context;
+  auto queue = ctx.queue;
+
+  clover::Buffer1D<double> state_density(ctx, globals.config.number_of_states);
+  clover::Buffer1D<double> state_energy(ctx, globals.config.number_of_states);
+  clover::Buffer1D<double> state_xvel(ctx, globals.config.number_of_states);
+  clover::Buffer1D<double> state_yvel(ctx, globals.config.number_of_states);
+  clover::Buffer1D<double> state_xmin(ctx, globals.config.number_of_states);
+  clover::Buffer1D<double> state_xmax(ctx, globals.config.number_of_states);
+  clover::Buffer1D<double> state_ymin(ctx, globals.config.number_of_states);
+  clover::Buffer1D<double> state_ymax(ctx, globals.config.number_of_states);
+  clover::Buffer1D<double> state_radius(ctx, globals.config.number_of_states);
+  clover::Buffer1D<int> state_geometry(ctx, globals.config.number_of_states);
+
+  size_t size = globals.config.number_of_states;
+  //queue.copy(state_density.data, h_state_density.data(), size);
+  //queue.copy(state_energy.data, h_state_energy.data(), size);
+  //queue.copy(state_xvel.data, h_state_xvel.data(), size);
+  //queue.copy(state_yvel.data, h_state_yvel.data(), size);
+  //queue.copy(state_xmin.data, h_state_xmin.data(), size);
+  //queue.copy(state_xmax.data, h_state_xmax.data(), size);
+  //queue.copy(state_ymin.data, h_state_ymin.data(), size);
+  //queue.copy(state_ymax.data, h_state_ymax.data(), size);
+  //queue.copy(state_radius.data, h_state_radius.data(), size);
+  //queue.copy(state_geometry.data, h_state_geometry.data(), size);
+
+  queue.memcpy(state_density.data, h_state_density.data(), size * sizeof(double));
+  queue.memcpy(state_energy.data, h_state_energy.data(), size * sizeof(double));
+  queue.memcpy(state_xvel.data, h_state_xvel.data(), size * sizeof(double));
+  queue.memcpy(state_yvel.data, h_state_yvel.data(), size * sizeof(double));
+  queue.memcpy(state_xmin.data, h_state_xmin.data(), size * sizeof(double));
+  queue.memcpy(state_xmax.data, h_state_xmax.data(), size * sizeof(double));
+  queue.memcpy(state_ymin.data, h_state_ymin.data(), size * sizeof(double));
+  queue.memcpy(state_ymax.data, h_state_ymax.data(), size * sizeof(double));
+  queue.memcpy(state_radius.data, h_state_radius.data(), size * sizeof(double));
+  queue.memcpy(state_geometry.data, h_state_geometry.data(), size * sizeof(int));
+
+  queue.wait_and_throw();
 
   // Kokkos::deep_copy (TO, FROM)
 

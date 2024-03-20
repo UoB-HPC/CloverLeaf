@@ -52,6 +52,7 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
   // y = y_min + 1  |  y_max + 2
 
   clover::Buffer1D<double> minResults(ctx, 1);
+  ctx.queue.copy(minResults.data, &dt_min_val, 1).wait_and_throw();
 
 #if defined(__HIPSYCL__) || defined(__OPENSYCL__)
   auto reduction = sycl::reduction(minResults.data, dt_min_val, sycl::minimum<double>());
@@ -98,7 +99,11 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
       })
       .wait_and_throw();
   ctx.queue.wait_and_throw();
-  dt_min_val = minResults[0];
+  
+  double* h_minRes = (double*) malloc(sizeof(double));
+  ctx.queue.memcpy(h_minRes, minResults.data, sizeof(double)).wait_and_throw();
+  dt_min_val = h_minRes[0];
+  std::free(h_minRes);
   clover::free(ctx.queue, minResults);
 
   dtl_control = static_cast<int>(10.01 * (jk_control - static_cast<int>(jk_control)));
@@ -109,19 +114,54 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
   if (dt_min_val < dtmin) small = 1;
 
   if (small != 0) {
+    double* h_cellx = (double*) malloc(sizeof(double));
+    double* h_celly = (double*) malloc(sizeof(double));
+    double* h_xvel0 = (double*) malloc(4 * sizeof(double));
+    double* h_yvel0 = (double*) malloc(4 * sizeof(double));
+    double* h_density0 = (double*) malloc(sizeof(double));
+    double* h_energy0 = (double*) malloc(sizeof(double));
+    double* h_pressure = (double*) malloc(sizeof(double));
+    double* h_soundspeed = (double*) malloc(sizeof(double));
+    ctx.queue.submit([&](sycl::handler &cgh) {
+      cgh.single_task([=]() {
+          h_cellx[0] = cellx[jldt];
+          h_celly[0] = celly[kldt];
+          int s = 0;
+          for(int i = 0; i < 2; i++) {
+            for(int j = 0; j < 2; j++) {
+              h_xvel0[s] = xvel0(jldt + i, kldt + j);
+              h_yvel0[s] = yvel0(jldt + i, kldt + j);
+              ++s;
+            }
+          }
+          h_density0[0] = density0(jldt, kldt);
+          h_energy0[0] = energy0(jldt, kldt);
+          h_pressure[0] = pressure(jldt, kldt);
+          h_soundspeed[0] = soundspeed(jldt, kldt);
+      });
+    }).wait_and_throw();
 
     std::cout << "Timestep information:" << std::endl
               << "j, k                 : " << jldt << " " << kldt << std::endl
-              << "x, y                 : " << cellx[jldt] << " " << celly[kldt] << std::endl
+              << "x, y                 : " << h_cellx[0] << " " << h_celly[0] << std::endl
               << "timestep : " << dt_min_val << std::endl
               << "Cell velocities;" << std::endl
-              << xvel0(jldt, kldt) << " " << yvel0(jldt, kldt) << std::endl
-              << xvel0(jldt + 1, kldt) << " " << yvel0(jldt + 1, kldt) << std::endl
-              << xvel0(jldt + 1, kldt + 1) << " " << yvel0(jldt + 1, kldt + 1) << std::endl
-              << xvel0(jldt, kldt + 1) << " " << yvel0(jldt, kldt + 1) << std::endl
+              << h_xvel0[0] << " " << h_yvel0[0] << std::endl
+              << h_xvel0[2] << " " << h_yvel0[2] << std::endl
+              << h_xvel0[3] << " " << h_yvel0[3] << std::endl
+              << h_xvel0[1] << " " << h_yvel0[1] << std::endl
               << "density, energy, pressure, soundspeed " << std::endl
-              << density0(jldt, kldt) << " " << energy0(jldt, kldt) << " " << pressure(jldt, kldt) << " " << soundspeed(jldt, kldt)
+              << h_density0[0] << " " << h_energy0[0] << " " << h_pressure[0] << " " << h_soundspeed[0]
               << std::endl;
+
+    std::free(h_cellx);
+    std::free(h_celly);
+    std::free(h_xvel0);
+    std::free(h_yvel0);
+    std::free(h_density0);
+    std::free(h_energy0);
+    std::free(h_pressure);
+    std::free(h_soundspeed);
   }
 }
 

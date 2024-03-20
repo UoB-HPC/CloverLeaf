@@ -40,7 +40,11 @@ struct context {
 template <typename T> struct Buffer1D {
   size_t size;
   T *data;
-  explicit Buffer1D(context &ctx, size_t size) : size(size), data(sycl::malloc_shared<T>(size, ctx.queue)) {}
+  context *mctx;
+
+  explicit Buffer1D(context &ctx, size_t size) : size(size), data(sycl::malloc_device<T>(size, ctx.queue)) {
+    mctx = new context { ctx.queue };
+  }
   T &operator[](size_t i) const { return data[i]; }
 
   template <size_t D> [[nodiscard]] size_t extent() const {
@@ -50,7 +54,10 @@ template <typename T> struct Buffer1D {
 
   std::vector<T> mirrored() const {
     std::vector<T> buffer(size);
-    std::copy(data, data + buffer.size(), buffer.begin());
+    T* h_data = (T*) malloc(size * sizeof(T));
+    mctx->queue.memcpy(h_data, data, buffer.size() * sizeof(T)).wait_and_throw();
+    std::copy(h_data, h_data + buffer.size(), buffer.begin());
+    free(h_data);
     return buffer;
   }
 };
@@ -58,7 +65,11 @@ template <typename T> struct Buffer1D {
 template <typename T> struct Buffer2D {
   size_t sizeX, sizeY;
   T *data;
-  Buffer2D(context &ctx, size_t sizeX, size_t sizeY) : sizeX(sizeX), sizeY(sizeY), data(sycl::malloc_shared<T>(sizeX * sizeY, ctx.queue)) {}
+  context *mctx;
+
+  Buffer2D(context &ctx, size_t sizeX, size_t sizeY) : sizeX(sizeX), sizeY(sizeY), data(sycl::malloc_device<T>(sizeX * sizeY, ctx.queue)) {
+    mctx = new context { ctx.queue };
+  }
   T &operator()(size_t i, size_t j) const { return data[i + j * sizeX]; }
 
   template <size_t D> [[nodiscard]] size_t extent() const {
@@ -72,15 +83,21 @@ template <typename T> struct Buffer2D {
   }
 
   std::vector<T> mirrored() const {
-    std::vector<T> buffer(sizeX * sizeY);
-    std::copy(data, data + buffer.size(), buffer.begin());
+    size_t size = sizeX * sizeY;
+    std::vector<T> buffer(size);
+    T* h_data = (T*) malloc(size * sizeof(T));
+    mctx->queue.memcpy(h_data, data, buffer.size() * sizeof(T)).wait_and_throw();
+    std::copy(h_data, h_data + buffer.size(), buffer.begin());
+    free(h_data);
     return buffer;
   }
   clover::BufferMirror2D<T> mirrored2() { return {mirrored(), extent<0>(), extent<1>()}; }
 };
 template <typename T> using StagingBuffer1D = Buffer1D<T> &;
 
-template <typename T> void free(sycl::queue &q, T &&b) { sycl::free(b.data, q); }
+template <typename T> void free(sycl::queue &q, T &&b) {
+  sycl::free(b.data, q);
+}
 
 template <typename T, typename... Ts> void free(sycl::queue &q, T &&t, Ts &&...ts) {
   free(q, t);
