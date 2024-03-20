@@ -52,7 +52,7 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
   // y = y_min + 1  |  y_max + 2
 
   clover::Buffer1D<double> minResults(ctx, 1);
-  ctx.queue.copy(minResults.data, &dt_min_val, 1).wait_and_throw();
+  ctx.queue.memcpy(minResults.data, &dt_min_val, sizeof(double)).wait_and_throw();
 
 #if defined(__HIPSYCL__) || defined(__OPENSYCL__)
   auto reduction = sycl::reduction(minResults.data, dt_min_val, sycl::minimum<double>());
