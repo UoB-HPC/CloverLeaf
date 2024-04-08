@@ -58,29 +58,18 @@ void generate_chunk(const int tile, global_variables &globals) {
 
   auto ctx = globals.context;
   auto queue = ctx.queue;
-
-  clover::Buffer1D<double> state_density(ctx, globals.config.number_of_states);
-  clover::Buffer1D<double> state_energy(ctx, globals.config.number_of_states);
-  clover::Buffer1D<double> state_xvel(ctx, globals.config.number_of_states);
-  clover::Buffer1D<double> state_yvel(ctx, globals.config.number_of_states);
-  clover::Buffer1D<double> state_xmin(ctx, globals.config.number_of_states);
-  clover::Buffer1D<double> state_xmax(ctx, globals.config.number_of_states);
-  clover::Buffer1D<double> state_ymin(ctx, globals.config.number_of_states);
-  clover::Buffer1D<double> state_ymax(ctx, globals.config.number_of_states);
-  clover::Buffer1D<double> state_radius(ctx, globals.config.number_of_states);
-  clover::Buffer1D<int> state_geometry(ctx, globals.config.number_of_states);
-
   size_t size = globals.config.number_of_states;
-  //queue.copy(state_density.data, h_state_density.data(), size);
-  //queue.copy(state_energy.data, h_state_energy.data(), size);
-  //queue.copy(state_xvel.data, h_state_xvel.data(), size);
-  //queue.copy(state_yvel.data, h_state_yvel.data(), size);
-  //queue.copy(state_xmin.data, h_state_xmin.data(), size);
-  //queue.copy(state_xmax.data, h_state_xmax.data(), size);
-  //queue.copy(state_ymin.data, h_state_ymin.data(), size);
-  //queue.copy(state_ymax.data, h_state_ymax.data(), size);
-  //queue.copy(state_radius.data, h_state_radius.data(), size);
-  //queue.copy(state_geometry.data, h_state_geometry.data(), size);
+
+  clover::Buffer1D<double> state_density(ctx, size);
+  clover::Buffer1D<double> state_energy(ctx, size);
+  clover::Buffer1D<double> state_xvel(ctx, size);
+  clover::Buffer1D<double> state_yvel(ctx, size);
+  clover::Buffer1D<double> state_xmin(ctx, size);
+  clover::Buffer1D<double> state_xmax(ctx, size);
+  clover::Buffer1D<double> state_ymin(ctx, size);
+  clover::Buffer1D<double> state_ymax(ctx, size);
+  clover::Buffer1D<double> state_radius(ctx, size);
+  clover::Buffer1D<int> state_geometry(ctx, size);
 
   queue.memcpy(state_density.data, h_state_density.data(), size * sizeof(double));
   queue.memcpy(state_energy.data, h_state_energy.data(), size * sizeof(double));
@@ -144,7 +133,7 @@ void generate_chunk(const int tile, global_variables &globals) {
         }
       } else if (state_geometry[state] == g_circ) {
         double radius =
-            std::sqrt((field.cellx[j] - x_cent) * (field.cellx[j] - x_cent) + (field.celly[k] - y_cent) * (field.celly[k] - y_cent));
+            sycl::sqrt((field.cellx[j] - x_cent) * (field.cellx[j] - x_cent) + (field.celly[k] - y_cent) * (field.celly[k] - y_cent));
         if (radius <= state_radius[state]) {
           field.energy0(x, y) = state_energy[state];
           field.density0(x, y) = state_density[state];
