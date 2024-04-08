@@ -70,7 +70,7 @@ template <typename T> struct Buffer2D {
   Buffer2D(context &ctx, size_t sizeX, size_t sizeY) : sizeX(sizeX), sizeY(sizeY), data(sycl::malloc_device<T>(sizeX * sizeY, ctx.queue)) {
     mctx = new context { ctx.queue };
   }
-  T &operator()(size_t i, size_t j) const { return data[i + j * sizeX]; }
+  T &operator()(size_t i, size_t j) const { return data[j + i * sizeY]; }
 
   template <size_t D> [[nodiscard]] size_t extent() const {
     if constexpr (D == 0) {
@@ -127,8 +127,8 @@ template <class functorT> static inline void par_ranged2(sycl::queue &q, const R
                               [=](sycl::id<2> idx) { functor(idx[0] + range.fromX, idx[1] + range.fromY); });
 #elif RANGE2D_MODE == RANGE2D_LINEAR
   auto event = q.parallel_for(sycl::range<1>(range.sizeX * range.sizeY), [=](sycl::id<1> id) {
-    const auto x = (id[0] % range.sizeX) + range.fromX;
-    const auto y = (id[0] / range.sizeX) + range.fromY;
+    const auto x = (id[0] / range.sizeY) + range.fromX;
+    const auto y = (id[0] % range.sizeY) + range.fromY;
     functor(x, y);
   });
 #elif RANGE2D_MODE == RANGE2D_ROUND
