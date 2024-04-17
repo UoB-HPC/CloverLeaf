@@ -77,22 +77,37 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
     int xmin = t.info.t_xmin;
     auto &field = t.field;
 
-#if defined(__HIPSYCL__) || defined(__OPENSYCL__)
-    auto reduction = sycl::reduction(summaryResults.data, {}, sycl::plus<summary>());
-#else
-    auto reduction =
-        sycl::reduction(summaryResults.data, {}, sycl::plus<>(), sycl::property::reduction::initialize_to_identity());
-#endif
+    size_t sizeX = xmax - xmin + 1;
+    size_t sizeY = ymax - ymin + 1;
 
     globals.context.queue
         .submit([&](sycl::handler &cgh) {
+#if defined(__HIPSYCL__) || defined(__OPENSYCL__)
           cgh.parallel_for(                                          //
               sycl::range<1>((ymax - ymin + 1) * (xmax - xmin + 1)), //
-              reduction,                                             //
+              sycl::reduction(summaryResults.data, {}, sycl::plus<summary>()),
               [=](sycl::id<1> idx, auto &acc) {
                 const size_t j = xmin + 1 + idx[0] % (xmax - xmin + 1);
                 const size_t k = ymin + 1 + idx[0] / (xmax - xmin + 1);
+#else
+          size_t maxThreadPerBlock = 256;
+          size_t localX = std::ceil(double(sizeX) / double(maxThreadPerBlock));
+          size_t localY = std::ceil(double(sizeY) / double(maxThreadPerBlock));
 
+          auto uniformLocalX = sizeX % localX == 0 ? localX : sizeX + (localX - sizeX % localX);
+          auto uniformLocalY = sizeY % localY == 0 ? localY : sizeY + (localY - sizeY % localY);
+          uniformLocalX = uniformLocalX >= sizeX ? 1 : uniformLocalX;
+          uniformLocalY = uniformLocalY >= sizeY ? 1 : uniformLocalY;
+
+          cgh.parallel_for( 
+              sycl::nd_range<2>(sycl::range<2>(sizeX, sizeY), sycl::range<2>(uniformLocalX, uniformLocalY)),
+              sycl::reduction(summaryResults.data, {}, sycl::plus<>(),
+                sycl::property::reduction::initialize_to_identity()),
+              [=](sycl::nd_item<2> idx, auto &acc) {
+                const auto global_idx = idx.get_global_id();
+                const size_t j = xmin + 1 + global_idx[0];
+                const size_t k = ymin + 1 + global_idx[1];
+#endif
                 double vsqrd = 0.0;
                 for (size_t kv = k; kv <= k + 1; ++kv) {
                   for (size_t jv = j; jv <= j + 1; ++jv) {

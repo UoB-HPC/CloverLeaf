@@ -44,31 +44,39 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
   //   DO j=x_min,x_max
   //	Kokkos::MDRangePolicy <Kokkos::Rank<2>> policy({x_min + 1, y_min + 1}, {x_max + 2, y_max + 2});
 
-  auto policy = clover::Range2d(x_min + 1, y_min + 1, x_max + 2, y_max + 2);
-
   int xStart = x_min + 1, xEnd = x_max + 2;
   int yStart = y_min + 1, yEnd = y_max + 2;
   int sizeX = xEnd - xStart;
+  int sizeY = yEnd - yStart;
   // y = y_min + 1  |  y_max + 2
 
   clover::Buffer1D<double> minResults(ctx, 1);
-  ctx.queue.memcpy(minResults.data, &dt_min_val, sizeof(double)).wait_and_throw();
-
-#if defined(__HIPSYCL__) || defined(__OPENSYCL__)
-  auto reduction = sycl::reduction(minResults.data, dt_min_val, sycl::minimum<double>());
-#else
-  auto reduction =
-      sycl::reduction(minResults.data, dt_min_val, sycl::minimum<double>(), sycl::property::reduction::initialize_to_identity());
-#endif
 
   ctx.queue
       .submit([&](sycl::handler &cgh) {
-        cgh.parallel_for(                                      //
-            sycl::range<1>((xEnd - xStart) * (yEnd - yStart)), //
-            reduction,                                         //
-            [=](sycl::id<1> idx, auto &acc) {
-              const auto i = xStart + (idx[0] % sizeX);
-              const auto j = yStart + (idx[0] / sizeX);
+#if defined(__HIPSYCL__) || defined(__OPENSYCL__)
+        cgh.parallel_for(sycl::range<1>((xEnd - xStart) * (yEnd - yStart)),
+                         sycl::reduction(minResults.data, dt_min_val, sycl::minimum<double>()), [=](sycl::id<1> idx, auto &acc) {
+                           const auto i = xStart + (idx[0] % sizeX);
+                           const auto j = yStart + (idx[0] / sizeX);
+#else
+        size_t maxThreadPerBlock = 256;
+        size_t localX = std::ceil(double(sizeX) / double(maxThreadPerBlock));
+        size_t localY = std::ceil(double(sizeY) / double(maxThreadPerBlock));
+
+        auto uniformLocalX = sizeX % localX == 0 ? localX : sizeX + (localX - sizeX % localX);
+        auto uniformLocalY = sizeY % localY == 0 ? localY : sizeY + (localY - sizeY % localY);
+        uniformLocalX = uniformLocalX >= sizeX ? 1 : uniformLocalX;
+        uniformLocalY = uniformLocalY >= sizeY ? 1 : uniformLocalY;
+
+        cgh.parallel_for(
+            sycl::nd_range<2>(sycl::range<2>(sizeX, sizeY), sycl::range<2>(uniformLocalX, uniformLocalY)),
+            sycl::reduction(minResults.data, dt_min_val, sycl::minimum<double>(), sycl::property::reduction::initialize_to_identity()),
+            [=](sycl::nd_item<2> idx, auto &acc) {
+              const auto global_idx = idx.get_global_id();
+              const auto i = xStart + global_idx[0];
+              const auto j = yStart + global_idx[1];
+#endif
               double dsx = celldx[i];
               double dsy = celldy[j];
               double cc = soundspeed(i, j) * soundspeed(i, j);
@@ -79,14 +87,14 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
               double dv1 = (xvel0(i, j) + xvel0(i + 0, j + 1)) * xarea(i, j);
               double dv2 = (xvel0(i + 1, j + 0) + xvel0(i + 1, j + 1)) * xarea(i + 1, j + 0);
               div = div + dv2 - dv1;
-              double dtut =
-                  dtu_safe * 2.0 * volume(i, j) / sycl::fmax(sycl::fmax(sycl::fabs(dv1), sycl::fabs(dv2)), g_small * volume(i, j));
+              double dtut = dtu_safe * 2.0 * volume(i, j) /
+                            sycl::fmax(sycl::fmax(sycl::fabs(dv1), sycl::fabs(dv2)), g_small * volume(i, j));
 
               dv1 = (yvel0(i, j) + yvel0(i + 1, j + 0)) * yarea(i, j);
               dv2 = (yvel0(i + 0, j + 1) + yvel0(i + 1, j + 1)) * yarea(i + 0, j + 1);
               div = div + dv2 - dv1;
-              double dtvt =
-                  dtv_safe * 2.0 * volume(i, j) / sycl::fmax(sycl::fmax(sycl::fabs(dv1), sycl::fabs(dv2)), g_small * volume(i, j));
+              double dtvt = dtv_safe * 2.0 * volume(i, j) /
+                            sycl::fmax(sycl::fmax(sycl::fabs(dv1), sycl::fabs(dv2)), g_small * volume(i, j));
               div = div / (2.0 * volume(i, j));
               double dtdivt;
               if (div < -g_small) {
@@ -99,8 +107,8 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
       })
       .wait_and_throw();
   ctx.queue.wait_and_throw();
-  
-  double* h_minRes = (double*) malloc(sizeof(double));
+
+  double *h_minRes = (double *)malloc(sizeof(double));
   ctx.queue.memcpy(h_minRes, minResults.data, sizeof(double)).wait_and_throw();
   dt_min_val = h_minRes[0];
   std::free(h_minRes);
@@ -114,32 +122,34 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
   if (dt_min_val < dtmin) small = 1;
 
   if (small != 0) {
-    double* h_cellx = (double*) malloc(sizeof(double));
-    double* h_celly = (double*) malloc(sizeof(double));
-    double* h_xvel0 = (double*) malloc(4 * sizeof(double));
-    double* h_yvel0 = (double*) malloc(4 * sizeof(double));
-    double* h_density0 = (double*) malloc(sizeof(double));
-    double* h_energy0 = (double*) malloc(sizeof(double));
-    double* h_pressure = (double*) malloc(sizeof(double));
-    double* h_soundspeed = (double*) malloc(sizeof(double));
-    ctx.queue.submit([&](sycl::handler &cgh) {
-      cgh.single_task([=]() {
-          h_cellx[0] = cellx[jldt];
-          h_celly[0] = celly[kldt];
-          int s = 0;
-          for(int i = 0; i < 2; i++) {
-            for(int j = 0; j < 2; j++) {
-              h_xvel0[s] = xvel0(jldt + i, kldt + j);
-              h_yvel0[s] = yvel0(jldt + i, kldt + j);
-              ++s;
+    double *h_cellx = (double *)malloc(sizeof(double));
+    double *h_celly = (double *)malloc(sizeof(double));
+    double *h_xvel0 = (double *)malloc(4 * sizeof(double));
+    double *h_yvel0 = (double *)malloc(4 * sizeof(double));
+    double *h_density0 = (double *)malloc(sizeof(double));
+    double *h_energy0 = (double *)malloc(sizeof(double));
+    double *h_pressure = (double *)malloc(sizeof(double));
+    double *h_soundspeed = (double *)malloc(sizeof(double));
+    ctx.queue
+        .submit([&](sycl::handler &cgh) {
+          cgh.single_task([=]() {
+            h_cellx[0] = cellx[jldt];
+            h_celly[0] = celly[kldt];
+            int s = 0;
+            for (int i = 0; i < 2; i++) {
+              for (int j = 0; j < 2; j++) {
+                h_xvel0[s] = xvel0(jldt + i, kldt + j);
+                h_yvel0[s] = yvel0(jldt + i, kldt + j);
+                ++s;
+              }
             }
-          }
-          h_density0[0] = density0(jldt, kldt);
-          h_energy0[0] = energy0(jldt, kldt);
-          h_pressure[0] = pressure(jldt, kldt);
-          h_soundspeed[0] = soundspeed(jldt, kldt);
-      });
-    }).wait_and_throw();
+            h_density0[0] = density0(jldt, kldt);
+            h_energy0[0] = energy0(jldt, kldt);
+            h_pressure[0] = pressure(jldt, kldt);
+            h_soundspeed[0] = soundspeed(jldt, kldt);
+          });
+        })
+        .wait_and_throw();
 
     std::cout << "Timestep information:" << std::endl
               << "j, k                 : " << jldt << " " << kldt << std::endl
@@ -151,8 +161,7 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
               << h_xvel0[3] << " " << h_yvel0[3] << std::endl
               << h_xvel0[1] << " " << h_yvel0[1] << std::endl
               << "density, energy, pressure, soundspeed " << std::endl
-              << h_density0[0] << " " << h_energy0[0] << " " << h_pressure[0] << " " << h_soundspeed[0]
-              << std::endl;
+              << h_density0[0] << " " << h_energy0[0] << " " << h_pressure[0] << " " << h_soundspeed[0] << std::endl;
 
     std::free(h_cellx);
     std::free(h_celly);
