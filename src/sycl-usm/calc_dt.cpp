@@ -108,10 +108,10 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
       .wait_and_throw();
   ctx.queue.wait_and_throw();
 
-  double *h_minRes = (double *)malloc(sizeof(double));
-  ctx.queue.memcpy(h_minRes, minResults.data, sizeof(double)).wait_and_throw();
+  double *h_minRes = new double[1];
+  ctx.queue.copy(minResults.data, h_minRes, 1).wait_and_throw();
   dt_min_val = h_minRes[0];
-  std::free(h_minRes);
+  delete[] h_minRes;
   clover::free(ctx.queue, minResults);
 
   dtl_control = static_cast<int>(10.01 * (jk_control - static_cast<int>(jk_control)));
@@ -122,14 +122,14 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
   if (dt_min_val < dtmin) small = 1;
 
   if (small != 0) {
-    double *h_cellx = (double *)malloc(sizeof(double));
-    double *h_celly = (double *)malloc(sizeof(double));
-    double *h_xvel0 = (double *)malloc(4 * sizeof(double));
-    double *h_yvel0 = (double *)malloc(4 * sizeof(double));
-    double *h_density0 = (double *)malloc(sizeof(double));
-    double *h_energy0 = (double *)malloc(sizeof(double));
-    double *h_pressure = (double *)malloc(sizeof(double));
-    double *h_soundspeed = (double *)malloc(sizeof(double));
+    double *h_cellx = new double[1];
+    double *h_celly = new double[1];
+    double *h_xvel0 = new double[4];
+    double *h_yvel0 = new double[4];
+    double *h_density0 = new double[1];
+    double *h_energy0 = new double[1];
+    double *h_pressure = new double[1];
+    double *h_soundspeed = new double[1];
     ctx.queue
         .submit([&](sycl::handler &cgh) {
           cgh.single_task([=]() {
@@ -163,14 +163,14 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
               << "density, energy, pressure, soundspeed " << std::endl
               << h_density0[0] << " " << h_energy0[0] << " " << h_pressure[0] << " " << h_soundspeed[0] << std::endl;
 
-    std::free(h_cellx);
-    std::free(h_celly);
-    std::free(h_xvel0);
-    std::free(h_yvel0);
-    std::free(h_density0);
-    std::free(h_energy0);
-    std::free(h_pressure);
-    std::free(h_soundspeed);
+    delete[] h_cellx;
+    delete[] h_celly;
+    delete[] h_xvel0;
+    delete[] h_yvel0;
+    delete[] h_density0;
+    delete[] h_energy0;
+    delete[] h_pressure;
+    delete[] h_soundspeed;
   }
 }
 

@@ -54,10 +54,7 @@ template <typename T> struct Buffer1D {
 
   std::vector<T> mirrored() const {
     std::vector<T> buffer(size);
-    T* h_data = (T*) malloc(size * sizeof(T));
-    mctx->queue.memcpy(h_data, data, buffer.size() * sizeof(T)).wait_and_throw();
-    std::copy(h_data, h_data + buffer.size(), buffer.begin());
-    free(h_data);
+    mctx->queue.copy(data, buffer.data(), buffer.size()).wait_and_throw();
     return buffer;
   }
 };
@@ -85,10 +82,7 @@ template <typename T> struct Buffer2D {
   std::vector<T> mirrored() const {
     size_t size = sizeX * sizeY;
     std::vector<T> buffer(size);
-    T* h_data = (T*) malloc(size * sizeof(T));
-    mctx->queue.memcpy(h_data, data, buffer.size() * sizeof(T)).wait_and_throw();
-    std::copy(h_data, h_data + buffer.size(), buffer.begin());
-    free(h_data);
+    mctx->queue.copy(data, buffer.data(), buffer.size()).wait_and_throw();
     return buffer;
   }
   clover::BufferMirror2D<T> mirrored2() { return {mirrored(), extent<0>(), extent<1>()}; }

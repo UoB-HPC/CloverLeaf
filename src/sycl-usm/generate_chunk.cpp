@@ -71,16 +71,16 @@ void generate_chunk(const int tile, global_variables &globals) {
   clover::Buffer1D<double> state_radius(ctx, size);
   clover::Buffer1D<int> state_geometry(ctx, size);
 
-  queue.memcpy(state_density.data, h_state_density.data(), size * sizeof(double));
-  queue.memcpy(state_energy.data, h_state_energy.data(), size * sizeof(double));
-  queue.memcpy(state_xvel.data, h_state_xvel.data(), size * sizeof(double));
-  queue.memcpy(state_yvel.data, h_state_yvel.data(), size * sizeof(double));
-  queue.memcpy(state_xmin.data, h_state_xmin.data(), size * sizeof(double));
-  queue.memcpy(state_xmax.data, h_state_xmax.data(), size * sizeof(double));
-  queue.memcpy(state_ymin.data, h_state_ymin.data(), size * sizeof(double));
-  queue.memcpy(state_ymax.data, h_state_ymax.data(), size * sizeof(double));
-  queue.memcpy(state_radius.data, h_state_radius.data(), size * sizeof(double));
-  queue.memcpy(state_geometry.data, h_state_geometry.data(), size * sizeof(int));
+  queue.copy(h_state_density.data(), state_density.data, size);
+  queue.copy(h_state_energy.data(), state_energy.data, size);
+  queue.copy(h_state_xvel.data(), state_xvel.data, size);
+  queue.copy(h_state_yvel.data(), state_yvel.data, size);
+  queue.copy(h_state_xmin.data(), state_xmin.data, size);
+  queue.copy(h_state_xmax.data(), state_xmax.data, size);
+  queue.copy(h_state_ymin.data(), state_ymin.data, size);
+  queue.copy(h_state_ymax.data(), state_ymax.data, size);
+  queue.copy(h_state_radius.data(), state_radius.data, size);
+  queue.copy(h_state_geometry.data(), state_geometry.data, size);
 
   queue.wait_and_throw();
 
