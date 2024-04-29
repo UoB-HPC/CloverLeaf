@@ -32,17 +32,20 @@ void reset_field_kernel(sycl::queue &queue, int x_min, int x_max, int y_min, int
 
   // DO k=y_min,y_max
   //   DO j=x_min,x_max
-  clover::par_ranged2(queue, Range2d{x_min + 1, y_min + 1, x_max + 2, y_max + 2}, [=](int i, int j) {
+  auto ev1 = clover::par_ranged2(queue, Range2d{x_min + 1, y_min + 1, x_max + 2, y_max + 2}, [=](int i, int j) {
     density0(i, j) = density1(i, j);
     energy0(i, j) = energy1(i, j);
-  });
+  }, true);
 
   // DO k=y_min,y_max+1
   //   DO j=x_min,x_max+1
-  clover::par_ranged2(queue, Range2d{x_min + 1, y_min + 1, x_max + 1 + 2, y_max + 1 + 2}, [=](int i, int j) {
+  auto ev2 = clover::par_ranged2(queue, Range2d{x_min + 1, y_min + 1, x_max + 1 + 2, y_max + 1 + 2}, [=](int i, int j) {
     xvel0(i, j) = xvel1(i, j);
     yvel0(i, j) = yvel1(i, j);
-  });
+  }, true);
+
+  ev1.wait();
+  ev2.wait();
 }
 
 //  @brief Reset field driver

@@ -106,7 +106,6 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
             });
       })
       .wait_and_throw();
-  ctx.queue.wait_and_throw();
 
   double *h_minRes = new double[1];
   ctx.queue.copy(minResults.data, h_minRes, 1).wait_and_throw();

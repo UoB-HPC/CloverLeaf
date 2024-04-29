@@ -106,7 +106,7 @@ template <class F> constexpr void par_ranged1(sycl::queue &q, const Range1d &ran
 }
 
 // delegates to parallel_for, handles flipping if enabled
-template <class functorT> static inline void par_ranged2(sycl::queue &q, const Range2d &range, functorT functor) {
+template <class functorT> static inline sycl::event par_ranged2(sycl::queue &q, const Range2d &range, functorT functor, bool nowait = false) {
 
 #define RANGE2D_NORMAL 0x01
 #define RANGE2D_LINEAR 0x02
@@ -140,7 +140,9 @@ template <class functorT> static inline void par_ranged2(sycl::queue &q, const R
   #error "Unsupported RANGE2D_MODE"
 #endif
   // It's an error to not sync with USM
-  event.wait_and_throw();
+  if(!nowait) event.wait_and_throw();
+
+  return event;
 }
 
 } // namespace clover

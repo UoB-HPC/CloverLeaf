@@ -36,6 +36,9 @@ void update_halo_kernel_2(sycl::queue &queue, int x_min, int x_max, int y_min, i
 //  the fields specified.
 void update_halo(global_variables &globals, int fields[NUM_FIELDS], const int depth) {
 
+  // Sync explicitly before exchanging halos
+  globals.context.queue.wait_and_throw();
+
   double kernel_time = 0;
   if (globals.profiler_on) kernel_time = timer();
   update_tile_halo(globals, fields, depth);

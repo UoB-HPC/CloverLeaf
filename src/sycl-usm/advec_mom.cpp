@@ -39,42 +39,48 @@ void advec_mom_kernel(sycl::queue &queue, int x_min, int x_max, int y_min, int y
   //   DO j=x_min-2,x_max+2
 
   clover::Range2d policy(x_min - 2 + 1, y_min - 2 + 1, x_max + 2 + 2, y_max + 2 + 2);
+  sycl::event ev1;
 
   if (mom_sweep == 1) { // x 1
 
-    clover::par_ranged2(queue, policy, [=](const int i, const int j) {
+    ev1 = clover::par_ranged2(queue, policy, [=](const int i, const int j) {
       post_vol(i, j) = volume(i, j) + vol_flux_y(i + 0, j + 1) - vol_flux_y(i, j);
       pre_vol(i, j) = post_vol(i, j) + vol_flux_x(i + 1, j + 0) - vol_flux_x(i, j);
-    });
+    }, true);
   } else if (mom_sweep == 2) { // y 1
 
-    clover::par_ranged2(queue, policy, [=](const int i, const int j) {
+    ev1 = clover::par_ranged2(queue, policy, [=](const int i, const int j) {
       post_vol(i, j) = volume(i, j) + vol_flux_x(i + 1, j + 0) - vol_flux_x(i, j);
       pre_vol(i, j) = post_vol(i, j) + vol_flux_y(i + 0, j + 1) - vol_flux_y(i, j);
-    });
+    }, true);
   } else if (mom_sweep == 3) { // x 2
 
-    clover::par_ranged2(queue, policy, [=](const int i, const int j) {
+    ev1 = clover::par_ranged2(queue, policy, [=](const int i, const int j) {
       post_vol(i, j) = volume(i, j);
       pre_vol(i, j) = post_vol(i, j) + vol_flux_y(i + 0, j + 1) - vol_flux_y(i, j);
-    });
+    }, true);
   } else if (mom_sweep == 4) { // y 2
 
-    clover::par_ranged2(queue, policy, [=](const int i, const int j) {
+    ev1 = clover::par_ranged2(queue, policy, [=](const int i, const int j) {
       post_vol(i, j) = volume(i, j);
       pre_vol(i, j) = post_vol(i, j) + vol_flux_x(i + 1, j + 0) - vol_flux_x(i, j);
-    });
+    }, true);
   }
+
+  sycl::event ev2;
 
   if (direction == 1) {
     if (which_vel == 1) {
       // DO k=y_min,y_max+1
       //   DO j=x_min-2,x_max+2
 
-      clover::par_ranged2(queue, Range2d{x_min - 2 + 1, y_min + 1, x_max + 2 + 2, y_max + 1 + 2}, [=](const int i, const int j) {
+      ev2 = clover::par_ranged2(queue, Range2d{x_min - 2 + 1, y_min + 1, x_max + 2 + 2, y_max + 1 + 2}, [=](const int i, const int j) {
         // Find staggered mesh mass fluxes, nodal masses and volumes.
         node_flux(i, j) = 0.25 * (mass_flux_x(i + 0, j - 1) + mass_flux_x(i, j) + mass_flux_x(i + 1, j - 1) + mass_flux_x(i + 1, j + 0));
-      });
+      }, true);
+
+      ev1.wait();
+      ev2.wait();
 
       // DO k=y_min,y_max+1
       //   DO j=x_min-1,x_max+2
@@ -130,16 +136,19 @@ void advec_mom_kernel(sycl::queue &queue, int x_min, int x_max, int y_min, int y
 
     clover::par_ranged2(queue, Range2d{x_min + 1, y_min + 1, x_max + 1 + 2, y_max + 1 + 2}, [=](const int i, const int j) {
       vel1(i, j) = (vel1(i, j) * node_mass_pre(i, j) + mom_flux(i - 1, j + 0) - mom_flux(i, j)) / node_mass_post(i, j);
-    });
+    }, true);
   } else if (direction == 2) {
     if (which_vel == 1) {
       // DO k=y_min-2,y_max+2
       //   DO j=x_min,x_max+1
 
-      clover::par_ranged2(queue, Range2d{x_min + 1, y_min - 2 + 1, x_max + 1 + 2, y_max + 2 + 2}, [=](const int i, const int j) {
+      ev2 = clover::par_ranged2(queue, Range2d{x_min + 1, y_min - 2 + 1, x_max + 1 + 2, y_max + 2 + 2}, [=](const int i, const int j) {
         // Find staggered mesh mass fluxes and nodal masses and volumes.
         node_flux(i, j) = 0.25 * (mass_flux_y(i - 1, j + 0) + mass_flux_y(i, j) + mass_flux_y(i - 1, j + 1) + mass_flux_y(i + 0, j + 1));
-      });
+      }, true);
+
+      ev1.wait();
+      ev2.wait();
 
       // DO k=y_min-1,y_max+2
       //   DO j=x_min,x_max+1
@@ -194,7 +203,7 @@ void advec_mom_kernel(sycl::queue &queue, int x_min, int x_max, int y_min, int y
 
     clover::par_ranged2(queue, Range2d{x_min + 1, y_min + 1, x_max + 1 + 2, y_max + 1 + 2}, [=](const int i, const int j) {
       vel1(i, j) = (vel1(i, j) * node_mass_pre(i, j) + mom_flux(i + 0, j - 1) - mom_flux(i, j)) / node_mass_post(i, j);
-    });
+    }, true);
   }
 }
 
