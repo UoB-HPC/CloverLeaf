@@ -98,11 +98,9 @@ template <typename T, typename... Ts> void free(sycl::queue &q, T &&t, Ts &&...t
   free(q, std::forward<Ts>(ts)...);
 }
 
-template <class F> constexpr void par_ranged1(sycl::queue &q, const Range1d &range, F functor) {
+template <class F> constexpr void par_ranged1(sycl::queue &q, const Range1d &range, F functor, bool nowait = false) {
   auto event = q.parallel_for(sycl::range<1>(range.size), [=](sycl::id<1> idx) { functor(range.from + idx[0]); });
-#ifdef SYNC_KERNELS
-  event.wait_and_throw();
-#endif
+  if(!nowait) event.wait_and_throw();
 }
 
 // delegates to parallel_for, handles flipping if enabled
