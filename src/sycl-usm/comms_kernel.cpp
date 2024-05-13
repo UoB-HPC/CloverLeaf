@@ -71,23 +71,20 @@ void clover_allocate_buffers(global_variables &globals, parallel_ &parallel) {
   }
 }
 
-#ifdef USE_HOSTTASK
 void clover_send_recv_message(global_variables &globals, chunk_neighbour_type tpe, clover::Buffer1D<double> &snd_buffer,
-                                   clover::Buffer1D<double> &rcv_buffer, int total_size, int tag_send, int tag_recv,
-                                   MPI_Request &req_send, MPI_Request &req_recv) {
+                              clover::Buffer1D<double> &rcv_buffer, int total_size, int tag_send, int tag_recv, MPI_Request &req_send,
+                              MPI_Request &req_recv) {
   int task = globals.chunk.chunk_neighbours[tpe] - 1;
   MPI_Isend(snd_buffer.data, total_size, MPI_DOUBLE, task, tag_send, MPI_COMM_WORLD, &req_send);
   MPI_Irecv(rcv_buffer.data, total_size, MPI_DOUBLE, task, tag_recv, MPI_COMM_WORLD, &req_recv);
 }
-#else
-void clover_send_recv_message(global_variables &globals, chunk_neighbour_type tpe, double* snd_buffer,
-                                   double* rcv_buffer, int total_size, int tag_send, int tag_recv,
-                                   MPI_Request &req_send, MPI_Request &req_recv) {
+
+void clover_send_recv_message(global_variables &globals, chunk_neighbour_type tpe, double *snd_buffer, double *rcv_buffer, int total_size,
+                              int tag_send, int tag_recv, MPI_Request &req_send, MPI_Request &req_recv) {
   int task = globals.chunk.chunk_neighbours[tpe] - 1;
   MPI_Isend(snd_buffer, total_size, MPI_DOUBLE, task, tag_send, MPI_COMM_WORLD, &req_send);
   MPI_Irecv(rcv_buffer, total_size, MPI_DOUBLE, task, tag_recv, MPI_COMM_WORLD, &req_recv);
 }
-#endif
 
 void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], const int depth) {
 
@@ -120,17 +117,22 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
   static clover::Buffer1D<double> bottom_rcv_buffer(globals.context, end_pack_index_bottom_top);
   static clover::Buffer1D<double> bottom_snd_buffer(globals.context, end_pack_index_bottom_top);
 
-#ifndef USE_HOSTTASK
-  double* h_left_rcv_buffer = new double[left_rcv_buffer.size];
-  double* h_left_snd_buffer = new double[left_snd_buffer.size];
-  double* h_right_rcv_buffer = new double[right_rcv_buffer.size];
-  double* h_right_snd_buffer = new double[right_snd_buffer.size];
+  double *h_left_rcv_buffer, *h_left_snd_buffer;
+  double *h_right_rcv_buffer, *h_right_snd_buffer;
+  double *h_top_rcv_buffer, *h_top_snd_buffer;
+  double *h_bottom_rcv_buffer, *h_bottom_snd_buffer;
 
-  double* h_top_rcv_buffer = new double[top_rcv_buffer.size];
-  double* h_top_snd_buffer = new double[top_snd_buffer.size];
-  double* h_bottom_rcv_buffer = new double[bottom_rcv_buffer.size];
-  double* h_bottom_snd_buffer = new double[bottom_snd_buffer.size];
-#endif
+  if (globals.config.staging_buffer) {
+    h_left_rcv_buffer = new double[left_rcv_buffer.size];
+    h_left_snd_buffer = new double[left_snd_buffer.size];
+    h_right_rcv_buffer = new double[right_rcv_buffer.size];
+    h_right_snd_buffer = new double[right_snd_buffer.size];
+
+    h_top_rcv_buffer = new double[top_rcv_buffer.size];
+    h_top_snd_buffer = new double[top_snd_buffer.size];
+    h_bottom_rcv_buffer = new double[bottom_rcv_buffer.size];
+    h_bottom_snd_buffer = new double[bottom_snd_buffer.size];
+  }
 
   if (globals.chunk.chunk_neighbours[chunk_left] != external_face) {
     // do left exchanges
@@ -143,17 +145,18 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     globals.context.queue.wait_and_throw();
 
     // send and recv messages to the left
-#ifdef USE_HOSTTASK
-    clover_send_recv_message(globals, chunk_left, left_snd_buffer, left_rcv_buffer, end_pack_index_left_right, 1, 2, request[message_count],
-                                  request[message_count + 1]);
-#else
-    auto ev1 = globals.context.queue.copy(left_rcv_buffer.data, h_left_rcv_buffer, left_rcv_buffer.size);
-    auto ev2 = globals.context.queue.copy(left_snd_buffer.data, h_left_snd_buffer, left_snd_buffer.size);
-    ev1.wait();
-    ev2.wait();
-    clover_send_recv_message(globals, chunk_left, h_left_snd_buffer, h_left_rcv_buffer, end_pack_index_left_right, 1, 2, request[message_count],
-                                  request[message_count + 1]);
-#endif
+    if (!globals.config.staging_buffer) {
+      clover_send_recv_message(globals, chunk_left, left_snd_buffer, left_rcv_buffer, end_pack_index_left_right, 1, 2,
+                               request[message_count], request[message_count + 1]);
+    } else {
+      auto ev1 = globals.context.queue.copy(left_rcv_buffer.data, h_left_rcv_buffer, left_rcv_buffer.size);
+      auto ev2 = globals.context.queue.copy(left_snd_buffer.data, h_left_snd_buffer, left_snd_buffer.size);
+      ev1.wait();
+      ev2.wait();
+      clover_send_recv_message(globals, chunk_left, h_left_snd_buffer, h_left_rcv_buffer, end_pack_index_left_right, 1, 2,
+                               request[message_count], request[message_count + 1]);
+    }
+
     message_count += 2;
   }
 
@@ -167,17 +170,18 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     globals.context.queue.wait_and_throw();
 
     // send message to the right
-#ifdef USE_HOSTTASK
-    clover_send_recv_message(globals, chunk_right, right_snd_buffer, right_rcv_buffer, end_pack_index_left_right, 2, 1, request[message_count],
-                                   request[message_count + 1]);
-#else
-    auto ev1 = globals.context.queue.copy(right_rcv_buffer.data, h_right_rcv_buffer, right_rcv_buffer.size);
-    auto ev2 = globals.context.queue.copy(right_snd_buffer.data, h_right_snd_buffer, right_snd_buffer.size);
-    ev1.wait();
-    ev2.wait();
-    clover_send_recv_message(globals, chunk_right, h_right_snd_buffer, h_right_rcv_buffer, end_pack_index_left_right, 2, 1, request[message_count],
-                                   request[message_count + 1]);
-#endif
+    if (!globals.config.staging_buffer) {
+      clover_send_recv_message(globals, chunk_right, right_snd_buffer, right_rcv_buffer, end_pack_index_left_right, 2, 1,
+                               request[message_count], request[message_count + 1]);
+    } else {
+      auto ev1 = globals.context.queue.copy(right_rcv_buffer.data, h_right_rcv_buffer, right_rcv_buffer.size);
+      auto ev2 = globals.context.queue.copy(right_snd_buffer.data, h_right_snd_buffer, right_snd_buffer.size);
+      ev1.wait();
+      ev2.wait();
+      clover_send_recv_message(globals, chunk_right, h_right_snd_buffer, h_right_rcv_buffer, end_pack_index_left_right, 2, 1,
+                               request[message_count], request[message_count + 1]);
+    }
+
     message_count += 2;
   }
 
@@ -185,13 +189,14 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
   MPI_Waitall(message_count, request, MPI_STATUS_IGNORE);
 
   // Copy back to the device
-#ifndef USE_HOSTTASK
-  if (globals.chunk.chunk_neighbours[chunk_left] != external_face) 
-    globals.context.queue.copy(h_left_rcv_buffer, left_rcv_buffer.data, left_rcv_buffer.size);
-  if (globals.chunk.chunk_neighbours[chunk_right] != external_face)
-    globals.context.queue.copy(h_right_rcv_buffer, right_rcv_buffer.data, right_rcv_buffer.size);
+  if (globals.config.staging_buffer) {
+    if (globals.chunk.chunk_neighbours[chunk_left] != external_face)
+      globals.context.queue.copy(h_left_rcv_buffer, left_rcv_buffer.data, left_rcv_buffer.size);
+    if (globals.chunk.chunk_neighbours[chunk_right] != external_face)
+      globals.context.queue.copy(h_right_rcv_buffer, right_rcv_buffer.data, right_rcv_buffer.size);
+  }
+
   globals.context.queue.wait_and_throw();
-#endif
 
   // unpack in left direction
   if (globals.chunk.chunk_neighbours[chunk_left] != external_face) {
@@ -227,17 +232,18 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     globals.context.queue.wait_and_throw();
 
     // send message downwards
-#ifdef USE_HOSTTASK
-    clover_send_recv_message(globals, chunk_bottom, bottom_snd_buffer, bottom_rcv_buffer, end_pack_index_bottom_top, 3, 4, request[message_count],
-                                    request[message_count + 1]);
-#else
-    auto ev1 = globals.context.queue.copy(bottom_rcv_buffer.data, h_bottom_rcv_buffer, bottom_rcv_buffer.size);
-    auto ev2 = globals.context.queue.copy(bottom_snd_buffer.data, h_bottom_snd_buffer, bottom_snd_buffer.size);
-    ev1.wait();
-    ev2.wait();
-    clover_send_recv_message(globals, chunk_bottom, h_bottom_snd_buffer, h_bottom_rcv_buffer, end_pack_index_bottom_top, 3, 4, request[message_count],
-                                    request[message_count + 1]);
-#endif
+    if (!globals.config.staging_buffer) {
+      clover_send_recv_message(globals, chunk_bottom, bottom_snd_buffer, bottom_rcv_buffer, end_pack_index_bottom_top, 3, 4,
+                               request[message_count], request[message_count + 1]);
+    } else {
+      auto ev1 = globals.context.queue.copy(bottom_rcv_buffer.data, h_bottom_rcv_buffer, bottom_rcv_buffer.size);
+      auto ev2 = globals.context.queue.copy(bottom_snd_buffer.data, h_bottom_snd_buffer, bottom_snd_buffer.size);
+      ev1.wait();
+      ev2.wait();
+      clover_send_recv_message(globals, chunk_bottom, h_bottom_snd_buffer, h_bottom_rcv_buffer, end_pack_index_bottom_top, 3, 4,
+                               request[message_count], request[message_count + 1]);
+    }
+
     message_count += 2;
   }
 
@@ -251,17 +257,18 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
     globals.context.queue.wait_and_throw();
 
     // send message upwards
-#ifdef USE_HOSTTASK
-    clover_send_recv_message(globals, chunk_top, top_snd_buffer, top_rcv_buffer, end_pack_index_bottom_top, 4, 3, request[message_count],
-                                 request[message_count + 1]);
-#else
-    auto ev1 = globals.context.queue.copy(top_rcv_buffer.data, h_top_rcv_buffer, top_rcv_buffer.size);
-    auto ev2 = globals.context.queue.copy(top_snd_buffer.data, h_top_snd_buffer, top_snd_buffer.size);
-    ev1.wait();
-    ev2.wait();
-    clover_send_recv_message(globals, chunk_top, h_top_snd_buffer, h_top_rcv_buffer, end_pack_index_bottom_top, 4, 3, request[message_count],
-                                 request[message_count + 1]);
-#endif
+    if (!globals.config.staging_buffer) {
+      clover_send_recv_message(globals, chunk_top, top_snd_buffer, top_rcv_buffer, end_pack_index_bottom_top, 4, 3, request[message_count],
+                               request[message_count + 1]);
+    } else {
+      auto ev1 = globals.context.queue.copy(top_rcv_buffer.data, h_top_rcv_buffer, top_rcv_buffer.size);
+      auto ev2 = globals.context.queue.copy(top_snd_buffer.data, h_top_snd_buffer, top_snd_buffer.size);
+      ev1.wait();
+      ev2.wait();
+      clover_send_recv_message(globals, chunk_top, h_top_snd_buffer, h_top_rcv_buffer, end_pack_index_bottom_top, 4, 3,
+                               request[message_count], request[message_count + 1]);
+    }
+
     message_count += 2;
   }
 
@@ -269,13 +276,14 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
   MPI_Waitall(message_count, request, MPI_STATUS_IGNORE);
 
   // Copy back to the device
-#ifndef USE_HOSTTASK
-  if (globals.chunk.chunk_neighbours[chunk_bottom] != external_face) 
-    globals.context.queue.copy(h_bottom_rcv_buffer, bottom_rcv_buffer.data, bottom_rcv_buffer.size);
-  if (globals.chunk.chunk_neighbours[chunk_top] != external_face)
-    globals.context.queue.copy(h_top_rcv_buffer, top_rcv_buffer.data, top_rcv_buffer.size);
+  if (globals.config.staging_buffer) {
+    if (globals.chunk.chunk_neighbours[chunk_bottom] != external_face)
+      globals.context.queue.copy(h_bottom_rcv_buffer, bottom_rcv_buffer.data, bottom_rcv_buffer.size);
+    if (globals.chunk.chunk_neighbours[chunk_top] != external_face)
+      globals.context.queue.copy(h_top_rcv_buffer, top_rcv_buffer.data, top_rcv_buffer.size);
+  }
+
   globals.context.queue.wait_and_throw();
-#endif
 
   // unpack in top direction
   if (globals.chunk.chunk_neighbours[chunk_top] != external_face) {
@@ -297,15 +305,15 @@ void clover_exchange(global_variables &globals, const int fields[NUM_FIELDS], co
 
   globals.context.queue.wait_and_throw();
 
-#ifndef USE_HOSTTASK
-  delete[] h_left_rcv_buffer;
-  delete[] h_left_snd_buffer;
-  delete[] h_right_rcv_buffer;
-  delete[] h_right_snd_buffer;
+  if (globals.config.staging_buffer) {
+    delete[] h_left_rcv_buffer;
+    delete[] h_left_snd_buffer;
+    delete[] h_right_rcv_buffer;
+    delete[] h_right_snd_buffer;
 
-  delete[] h_top_rcv_buffer;
-  delete[] h_top_snd_buffer;
-  delete[] h_bottom_rcv_buffer;
-  delete[] h_bottom_snd_buffer;
-#endif
+    delete[] h_top_rcv_buffer;
+    delete[] h_top_snd_buffer;
+    delete[] h_bottom_rcv_buffer;
+    delete[] h_bottom_snd_buffer;
+  }
 }
