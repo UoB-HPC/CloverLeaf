@@ -76,12 +76,8 @@ void clover_send_recv_message(global_variables &globals, chunk_neighbour_type tp
                                    clover::Buffer1D<double> &rcv_buffer, int total_size, int tag_send, int tag_recv,
                                    MPI_Request &req_send, MPI_Request &req_recv) {
   int task = globals.chunk.chunk_neighbours[tpe] - 1;
-  globals.context.queue.submit([&](sycl::handler &h) {
-    h.host_task([=, &req_send, &req_recv]() {
-      MPI_Isend(snd_buffer.data, total_size, MPI_DOUBLE, task, tag_send, MPI_COMM_WORLD, &req_send);
-      MPI_Irecv(rcv_buffer.data, total_size, MPI_DOUBLE, task, tag_recv, MPI_COMM_WORLD, &req_recv);
-    });
-  });
+  MPI_Isend(snd_buffer.data, total_size, MPI_DOUBLE, task, tag_send, MPI_COMM_WORLD, &req_send);
+  MPI_Irecv(rcv_buffer.data, total_size, MPI_DOUBLE, task, tag_recv, MPI_COMM_WORLD, &req_recv);
 }
 #else
 void clover_send_recv_message(global_variables &globals, chunk_neighbour_type tpe, double* snd_buffer,
