@@ -56,7 +56,7 @@ void clover_pack_message_left(global_variables &globals, int x_min, int x_max, i
       size_t index = buffer_offset + j + k * depth;
       left_snd[index] = field(x_min + x_inc - 1 + j + 2, k);
     }
-  });
+  }, true);
 }
 
 void clover_unpack_message_left(global_variables &globals, int x_min, int x_max, int y_min, int y_max, clover::Buffer2D<double> &field,
@@ -88,7 +88,7 @@ void clover_unpack_message_left(global_variables &globals, int x_min, int x_max,
       size_t index = buffer_offset + j + k * depth;
       field(x_min - j, k) = left_rcv[index];
     }
-  });
+  }, true);
 }
 
 void clover_pack_message_right(global_variables &globals, int x_min, int x_max, int y_min, int y_max, clover::Buffer2D<double> &field,
@@ -120,7 +120,7 @@ void clover_pack_message_right(global_variables &globals, int x_min, int x_max, 
       size_t index = buffer_offset + j + k * depth;
       right_snd[index] = field(x_max + 1 - j, k);
     }
-  });
+  }, true);
 }
 
 void clover_unpack_message_right(global_variables &globals, int x_min, int x_max, int y_min, int y_max, clover::Buffer2D<double> &field,
@@ -156,7 +156,7 @@ void clover_unpack_message_right(global_variables &globals, int x_min, int x_max
       size_t index = buffer_offset + j + k * depth;
       field(x_max + x_inc + j + 2, k) = right_rcv[index];
     }
-  });
+  }, true);
 }
 
 void clover_pack_message_top(global_variables &globals, int x_min, int x_max, int y_min, int y_max, clover::Buffer2D<double> &field,
@@ -187,7 +187,7 @@ void clover_pack_message_top(global_variables &globals, int x_min, int x_max, in
     clover::par_ranged1(globals.context.queue, Range1d{x_min - depth + 1, x_max + x_inc + depth + 2}, [=](int j) {
       size_t index = buffer_offset + k + j * depth;
       top_snd[index] = field(j, y_max + 1 - k);
-    });
+    }, true);
   }
 }
 
@@ -223,7 +223,7 @@ void clover_unpack_message_top(global_variables &globals, int x_min, int x_max, 
     clover::par_ranged1(globals.context.queue, Range1d{x_min - depth + 1, x_max + x_inc + depth + 2}, [=](int j) {
       size_t index = buffer_offset + k + j * depth;
       field(j, y_max + y_inc + k + 2) = top_rcv[index];
-    });
+    }, true);
   }
 }
 
@@ -259,7 +259,7 @@ void clover_pack_message_bottom(global_variables &globals, int x_min, int x_max,
     clover::par_ranged1(globals.context.queue, Range1d{x_min - depth + 1, x_max + x_inc + depth + 2}, [=](int j) {
       size_t index = buffer_offset + k + j * depth;
       bottom_snd[index] = field(j, y_min + y_inc - 1 + k + 2);
-    });
+    }, true);
   }
 }
 
@@ -291,6 +291,6 @@ void clover_unpack_message_bottom(global_variables &globals, int x_min, int x_ma
     clover::par_ranged1(globals.context.queue, Range1d{x_min - depth + 1, x_max + x_inc + depth + 2}, [=](int j) {
       size_t index = buffer_offset + k + j * depth;
       field(j, y_min - k) = bottom_rcv[index];
-    });
+    }, true);
   }
 }

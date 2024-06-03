@@ -36,7 +36,7 @@ void flux_calc_kernel(sycl::queue &queue, int x_min, int x_max, int y_min, int y
   clover::par_ranged2(queue, Range2d{x_min + 1, y_min + 1, x_max + 1 + 2, y_max + 1 + 2}, [=](const int i, const int j) {
     vol_flux_x(i, j) = 0.25 * dt * xarea(i, j) * (xvel0(i, j) + xvel0(i + 0, j + 1) + xvel1(i, j) + xvel1(i + 0, j + 1));
     vol_flux_y(i, j) = 0.25 * dt * yarea(i, j) * (yvel0(i, j) + yvel0(i + 1, j + 0) + yvel1(i, j) + yvel1(i + 1, j + 0));
-  });
+  }, true);
 }
 
 // @brief Driver for the flux kernels

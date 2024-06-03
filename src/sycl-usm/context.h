@@ -40,7 +40,11 @@ struct context {
 template <typename T> struct Buffer1D {
   size_t size;
   T *data;
-  explicit Buffer1D(context &ctx, size_t size) : size(size), data(sycl::malloc_shared<T>(size, ctx.queue)) {}
+  context *mctx;
+
+  explicit Buffer1D(context &ctx, size_t size) : size(size), data(sycl::malloc_device<T>(size, ctx.queue)) {
+    mctx = new context { ctx.queue };
+  }
   T &operator[](size_t i) const { return data[i]; }
 
   template <size_t D> [[nodiscard]] size_t extent() const {
@@ -50,7 +54,7 @@ template <typename T> struct Buffer1D {
 
   std::vector<T> mirrored() const {
     std::vector<T> buffer(size);
-    std::copy(data, data + buffer.size(), buffer.begin());
+    mctx->queue.copy(data, buffer.data(), buffer.size()).wait_and_throw();
     return buffer;
   }
 };
@@ -58,8 +62,12 @@ template <typename T> struct Buffer1D {
 template <typename T> struct Buffer2D {
   size_t sizeX, sizeY;
   T *data;
-  Buffer2D(context &ctx, size_t sizeX, size_t sizeY) : sizeX(sizeX), sizeY(sizeY), data(sycl::malloc_shared<T>(sizeX * sizeY, ctx.queue)) {}
-  T &operator()(size_t i, size_t j) const { return data[i + j * sizeX]; }
+  context *mctx;
+
+  Buffer2D(context &ctx, size_t sizeX, size_t sizeY) : sizeX(sizeX), sizeY(sizeY), data(sycl::malloc_device<T>(sizeX * sizeY, ctx.queue)) {
+    mctx = new context { ctx.queue };
+  }
+  T &operator()(size_t i, size_t j) const { return data[j + i * sizeY]; }
 
   template <size_t D> [[nodiscard]] size_t extent() const {
     if constexpr (D == 0) {
@@ -72,30 +80,31 @@ template <typename T> struct Buffer2D {
   }
 
   std::vector<T> mirrored() const {
-    std::vector<T> buffer(sizeX * sizeY);
-    std::copy(data, data + buffer.size(), buffer.begin());
+    size_t size = sizeX * sizeY;
+    std::vector<T> buffer(size);
+    mctx->queue.copy(data, buffer.data(), buffer.size()).wait_and_throw();
     return buffer;
   }
   clover::BufferMirror2D<T> mirrored2() { return {mirrored(), extent<0>(), extent<1>()}; }
 };
 template <typename T> using StagingBuffer1D = Buffer1D<T> &;
 
-template <typename T> void free(sycl::queue &q, T &&b) { sycl::free(b.data, q); }
+template <typename T> void free(sycl::queue &q, T &&b) {
+  sycl::free(b.data, q);
+}
 
 template <typename T, typename... Ts> void free(sycl::queue &q, T &&t, Ts &&...ts) {
   free(q, t);
   free(q, std::forward<Ts>(ts)...);
 }
 
-template <class F> constexpr void par_ranged1(sycl::queue &q, const Range1d &range, F functor) {
+template <class F> constexpr void par_ranged1(sycl::queue &q, const Range1d &range, F functor, bool nowait = false) {
   auto event = q.parallel_for(sycl::range<1>(range.size), [=](sycl::id<1> idx) { functor(range.from + idx[0]); });
-#ifdef SYNC_KERNELS
-  event.wait_and_throw();
-#endif
+  if(!nowait) event.wait_and_throw();
 }
 
 // delegates to parallel_for, handles flipping if enabled
-template <class functorT> static inline void par_ranged2(sycl::queue &q, const Range2d &range, functorT functor) {
+template <class functorT> static inline sycl::event par_ranged2(sycl::queue &q, const Range2d &range, functorT functor, bool nowait = false) {
 
 #define RANGE2D_NORMAL 0x01
 #define RANGE2D_LINEAR 0x02
@@ -110,8 +119,8 @@ template <class functorT> static inline void par_ranged2(sycl::queue &q, const R
                               [=](sycl::id<2> idx) { functor(idx[0] + range.fromX, idx[1] + range.fromY); });
 #elif RANGE2D_MODE == RANGE2D_LINEAR
   auto event = q.parallel_for(sycl::range<1>(range.sizeX * range.sizeY), [=](sycl::id<1> id) {
-    const auto x = (id[0] % range.sizeX) + range.fromX;
-    const auto y = (id[0] / range.sizeX) + range.fromY;
+    const auto x = (id[0] / range.sizeY) + range.fromX;
+    const auto y = (id[0] % range.sizeY) + range.fromY;
     functor(x, y);
   });
 #elif RANGE2D_MODE == RANGE2D_ROUND
@@ -129,7 +138,9 @@ template <class functorT> static inline void par_ranged2(sycl::queue &q, const R
   #error "Unsupported RANGE2D_MODE"
 #endif
   // It's an error to not sync with USM
-  event.wait_and_throw();
+  if(!nowait) event.wait_and_throw();
+
+  return event;
 }
 
 } // namespace clover

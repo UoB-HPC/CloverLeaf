@@ -75,7 +75,7 @@ void PdV_kernel(sycl::queue &queue, bool predict, int x_min, int x_max, int y_mi
       double energy_change = (pressure(i, j) / density0(i, j) + viscosity(i, j) / density0(i, j)) * total_flux * recip_volume;
       energy1(i, j) = energy0(i, j) - energy_change;
       density1(i, j) = density0(i, j) * volume_change_s;
-    });
+    }, true);
   }
 }
 
