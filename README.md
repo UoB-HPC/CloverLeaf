@@ -22,7 +22,8 @@ particular order:
 
 - CUDA
 - HIP
-- OpenMP 3 and 4.5
+- OpenMP
+- OpenMP target
 - C++ Parallel STL (StdPar)
 - Kokkos >= 4
 - SYCL and SYCL 2020
