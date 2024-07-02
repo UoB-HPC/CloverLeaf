@@ -52,6 +52,9 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
 
   clover::Buffer1D<double> minResults(ctx, 1);
 
+  auto device = ctx.queue.get_device();
+  auto max_wg_size = device.get_info<sycl::info::device::max_work_group_size>();
+
   ctx.queue
       .submit([&](sycl::handler &cgh) {
 #if defined(__HIPSYCL__) || defined(__OPENSYCL__)
@@ -60,7 +63,7 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
                            const auto i = xStart + (idx[0] % sizeX);
                            const auto j = yStart + (idx[0] / sizeX);
 #else
-        size_t maxThreadPerBlock = 256;
+        size_t maxThreadPerBlock = max_wg_size;
         size_t localX = std::ceil(double(sizeX) / double(maxThreadPerBlock));
         size_t localY = std::ceil(double(sizeY) / double(maxThreadPerBlock));
 
