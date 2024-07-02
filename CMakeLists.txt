@@ -155,7 +155,7 @@ endif ()
 
 # setup some defaults flags for everything
 set(DEFAULT_DEBUG_CXX_FLAGS -Wall -O2)
-set(DEFAULT_RELEASE_CXX_FLAGS -Wall -O3 -march=native)
+set(DEFAULT_RELEASE_CXX_FLAGS -Wall -O3)
 
 macro(hint_flag FLAG DESCRIPTION)
     if (NOT DEFINED ${FLAG})
@@ -306,6 +306,7 @@ register_model(cuda USE_CUDA ${MODEL_SRC})
 register_model(hip USE_HIP ${MODEL_SRC})
 register_model(std-indices USE_STD ${MODEL_SRC})
 register_model(kokkos USE_KOKKOS ${MODEL_SRC})
+register_model(acc ACC ${MODEL_SRC})
 register_model(sycl-acc USE_SYCL_ACC ${MODEL_SRC})
 register_model(sycl-usm USE_SYCL_USM ${MODEL_SRC})
 
