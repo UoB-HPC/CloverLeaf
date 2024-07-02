@@ -80,6 +80,9 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
     size_t sizeX = xmax - xmin + 1;
     size_t sizeY = ymax - ymin + 1;
 
+    auto device = globals.context.queue.get_device();
+    auto max_wg_size = device.get_info<sycl::info::device::max_work_group_size>();
+
     globals.context.queue
         .submit([&](sycl::handler &cgh) {
 #if defined(__HIPSYCL__) || defined(__OPENSYCL__)
@@ -90,7 +93,7 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
                 const size_t j = xmin + 1 + idx[0] % (xmax - xmin + 1);
                 const size_t k = ymin + 1 + idx[0] / (xmax - xmin + 1);
 #else
-          size_t maxThreadPerBlock = 256;
+          size_t maxThreadPerBlock = max_wg_size;
           size_t localX = std::ceil(double(sizeX) / double(maxThreadPerBlock));
           size_t localY = std::ceil(double(sizeY) / double(maxThreadPerBlock));
 
