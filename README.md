@@ -1,8 +1,6 @@
 CloverLeaf
 ====
 
-WIP
-
 CloverLeaf implementation in a wide range of parallel programming models.
 This implementation has support for building with and without MPI.
 When MPI is enabled, all models will adjust accordingly for asynchronous MPI send/recv.
@@ -24,14 +22,15 @@ particular order:
 
 - CUDA
 - HIP
-- OpenMP 3 and 4.5
+- OpenMP
+- OpenMP target
 - C++ Parallel STL (StdPar)
 - Kokkos >= 4
 - SYCL and SYCL 2020
+- OpenACC (special thanks to @pranav-sivaraman's contribution)
 
 Planned:
 
-- OpenACC
 - RAJA
 - TBB
 - Thrust (via CUDA or HIP)
@@ -159,3 +158,24 @@ Result:
   - Problem: 2
   - Outcome: PASSED
 ```
+
+# Licence
+
+```
+Crown Copyright 2012 AWE.
+Copyright (c) 2019-24 Wei-Chen Lin, Tom Deakin, Simon McIntosh-Smith.
+
+
+CloverLeaf is free software: you can redistribute it and/or modify it under 
+the terms of the GNU General Public License as published by the 
+Free Software Foundation, either version 3 of the License, or (at your option) 
+any later version.
+
+CloverLeaf is distributed in the hope that it will be useful, but 
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+details.
+
+You should have received a copy of the GNU General Public License along with
+CloverLeaf. If not, see http://www.gnu.org/licenses/.
+ ```
