@@ -28,11 +28,10 @@ particular order:
 - Kokkos >= 4
 - SYCL and SYCL 2020
 - OpenACC (special thanks to @pranav-sivaraman's contribution)
+- TBB
 
 Planned:
-
 - RAJA
-- TBB
 - Thrust (via CUDA or HIP)
 
 ## Building

@@ -17,6 +17,7 @@ include(FetchContent)
 ######
 
 if (NOT MODEL)
+
     #    set(MODEL std-indices)
     #    set(NVHPC_OFFLOAD cc60)
     #        set(CXX_EXTRA_FLAGS
@@ -184,19 +185,19 @@ if ((DEFINED CXX_EXTRA_FLAGS) AND (NOT DEFINED CXX_EXTRA_LINK_FLAGS))
     set(CXX_EXTRA_LINK_FLAGS ${CXX_EXTRA_FLAGS})
 endif ()
 
-option(USE_TBB "Enable oneTBB library for *supported* models. Enabling this on models that
+option(USE_ONETBB "Enable oneTBB library for *supported* models. Enabling this on models that
                 don't explicitly link against TBB is a no-op, see description of your selected
                 model on how this is used." OFF)
 
-option(FETCH_TBB "Fetch (download) the oneTBB library for *supported* models. This uses CMake's
-                  FetchContent feature. Specify version by setting FETCH_TBB_VERSION" OFF)
-set(FETCH_TBB_VERSION "v2021.10.0" CACHE STRING "Specify version of oneTBB to use if FETCH_TBB is ON")
+option(FETCH_ONETBB "Fetch (download) the oneTBB library for *supported* models. This uses CMake's
+                  FetchContent feature. Specify version by setting FETCH_ONETBB_VERSION" OFF)
+set(FETCH_ONETBB_VERSION "v2021.10.0" CACHE STRING "Specify version of oneTBB to use if FETCH_ONETBB is ON")
 
-if (FETCH_TBB)
+if (FETCH_ONETBB)
     FetchContent_Declare(
             TBB
             GIT_REPOSITORY https://github.com/oneapi-src/oneTBB.git
-            GIT_TAG "${FETCH_TBB_VERSION}"
+            GIT_TAG "${FETCH_ONETBB_VERSION}"
     )
     # Don't fail builds on waring (TBB has -Wall while not being free of warnings from unused symbols...)
     set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
@@ -232,7 +233,7 @@ if (FETCH_ONEDPL)
     FetchContent_GetProperties(oneDPL)
     if (NOT oneDPL_POPULATED)
         FetchContent_Populate(oneDPL)
-        if (USE_TBB)
+        if (USE_ONETBB)
             macro(find_package NAME)
                 if ("${NAME}" STREQUAL "TBB")
                     message(STATUS "Discarding oneDPL's call to find_package(${NAME} ${ARGN})")
@@ -305,6 +306,7 @@ register_model(serial USE_SERIAL ${MODEL_SRC})
 register_model(cuda USE_CUDA ${MODEL_SRC})
 register_model(hip USE_HIP ${MODEL_SRC})
 register_model(std-indices USE_STD ${MODEL_SRC})
+register_model(tbb USE_TBB ${MODEL_SRC})
 register_model(kokkos USE_KOKKOS ${MODEL_SRC})
 register_model(acc ACC ${MODEL_SRC})
 register_model(sycl-acc USE_SYCL_ACC ${MODEL_SRC})
