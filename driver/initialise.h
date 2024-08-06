@@ -22,6 +22,7 @@
 #include "comms.h"
 #include "definitions.h"
 #include <functional>
+#include <algorithm>
 #include <iomanip>
 #include <memory>
 #include <optional>
