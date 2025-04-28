@@ -7,12 +7,17 @@ register_flag_required(CMAKE_CUDA_COMPILER
         "Path to the CUDA nvcc compiler")
 
 # XXX we may want to drop this eventually and use CMAKE_CUDA_ARCHITECTURES directly
-register_flag_required(CUDA_ARCH
-        "Nvidia architecture, this will be append the compile line via `-arch=` (e.g `sm_70`) for nvcc or --cuda-arch for clang++")
+register_flag_optional(CUDA_ARCH
+        "Nvidia architecture, this will be append the compile line via `-arch=` (e.g `sm_70`) for nvcc or --cuda-arch for clang++"
+        "sm_86")
 
 
 register_flag_optional(CUDA_CLANG_DRIVER
         "Disable any nvcc-specific flags so that setting CMAKE_CUDA_COMPILER to clang++ can compile successfully"
+        "OFF")
+
+register_flag_optional(ACPP_PCUDA_DRIVER
+        "Assume AdaptiveCpp PCUDA driver"
         "OFF")
 
 register_flag_optional(CUDA_EXTRA_FLAGS
@@ -41,18 +46,23 @@ macro(setup)
             message(FATAL_ERROR "Using clang driver for CUDA is only supported for CMake >= 3.18")
         endif ()
         set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -std=c++17 --cuda-gpu-arch=${CUDA_ARCH} ${CUDA_EXTRA_FLAGS}")
+        enable_language(CUDA)
+    elseif(ACPP_PCUDA_DRIVER)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CUDA_FLAGS} ${CMAKE_CXX_FLAGS} --acpp-pcuda --acpp-pcuda-chevron-launch ${CUDA_EXTRA_FLAGS}")
     else ()
         # add -forward-unknown-to-host-compiler for compatibility reasons
         # add -std=c++17 manually as older CMake seems to omit this (source gets treated as C otherwise)
         set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -std=c++17 -forward-unknown-to-host-compiler -extended-lambda -use_fast_math -restrict -arch=${CUDA_ARCH} ${CUDA_EXTRA_FLAGS}")
+        enable_language(CUDA)
     endif ()
 
-    enable_language(CUDA)
 
 
     # CMake defaults to -O2 for CUDA at Release, let's wipe that and use the global RELEASE_FLAG
     # appended later
-    wipe_gcc_style_optimisation_flags(CMAKE_CUDA_FLAGS_${BUILD_TYPE})
+    if(NOT ACPP_PCUDA_DRIVER)
+        wipe_gcc_style_optimisation_flags(CMAKE_CUDA_FLAGS_${BUILD_TYPE})
+    endif()
 
     if (MANAGED_ALLOC)
         register_definitions(CLOVER_MANAGED_ALLOC)
@@ -69,6 +79,8 @@ macro(setup_target NAME)
     # Treat everything as CUDA source
     get_target_property(PROJECT_SRC "${NAME}" SOURCES)
     foreach (SRC ${PROJECT_SRC})
-        set_source_files_properties("${SRC}" PROPERTIES LANGUAGE CUDA)
+        if(NOT ACPP_PCUDA_DRIVER)
+            set_source_files_properties("${SRC}" PROPERTIES LANGUAGE CUDA)
+        endif()
     endforeach ()
 endmacro()
