@@ -191,6 +191,7 @@ register_model(kokkos USE_KOKKOS ${MODEL_SRC})
 register_model(acc ACC ${MODEL_SRC})
 register_model(sycl-acc USE_SYCL_ACC ${MODEL_SRC})
 register_model(sycl-usm USE_SYCL_USM ${MODEL_SRC})
+register_model(raja USE_RAJA ${MODEL_SRC})
 
 #register_model(acc ACC fasten.hpp)
 # defining RAJA collides with the RAJA namespace so USE_RAJA

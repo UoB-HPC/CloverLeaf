@@ -33,6 +33,11 @@ template <typename T> struct BufferMirror2D {
   BufferMirror2D(std::vector<T> actual, size_t sizeX, size_t sizeY) : sizeX(sizeX), sizeY(sizeY), actual(actual) {
     if (sizeX * sizeY != actual.size()) throw std::logic_error("Bad mirror size");
   }
+
+  BufferMirror2D(T *actual_data, size_t sizeX, size_t sizeY) : sizeX(sizeX), sizeY(sizeY) {
+    actual.assign(actual_data, actual_data + sizeX*sizeY);
+  }
+
   T &operator()(size_t i, size_t j)   { return actual[j + i * sizeY]; }
 };
 
