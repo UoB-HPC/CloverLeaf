@@ -20,11 +20,8 @@
 #pragma once
 
 #include "context.h"
-#include <CL/sycl.hpp>
 #include <iostream>
 #include <utility>
-
-using namespace cl;
 
 namespace clover {
 

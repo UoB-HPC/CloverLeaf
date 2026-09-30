@@ -72,6 +72,9 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
     int xmin = t.info.t_xmin;
 #ifdef USE_SYCL2020_REDUCTION
     clover::Buffer1D<summary> summaryResults(globals.context, 1);
+#if defined(__ADAPTIVECPP__) || defined(__ACPP__) || defined(__HIPSYCL__) || defined(__OPENSYCL__)
+    summaryResults.access()[0] = {};
+#endif
     globals.context.queue
         .submit([&](sycl::handler &h) {
           auto xvel0_ = t.field.xvel0.access<R>(h);
@@ -80,7 +83,7 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
           auto density0_ = t.field.density0.access<R>(h);
           auto energy0_ = t.field.energy0.access<R>(h);
           auto pressure_ = t.field.pressure.access<R>(h);
-  #if defined(__HIPSYCL__) || defined(__OPENSYCL__)
+  #if defined(__ADAPTIVECPP__) || defined(__ACPP__) || defined(__HIPSYCL__) || defined(__OPENSYCL__)
           auto reduction = sycl::reduction(summaryResults.access<RW>(h), {}, sycl::plus<summary>());
   #else
           auto reduction =

@@ -18,9 +18,19 @@
  */
 
 #include <fstream>
+#include <hip/hip_version.h>
 
 #include "initialise.h"
 #include "start.h"
+
+static std::string device_arch(const hipDeviceProp_t &props) {
+  // XXX gcnArchName was added in ROCm 3.6; gcnArch was removed in ROCm 6.0.
+#if HIP_VERSION_MAJOR > 3 || (HIP_VERSION_MAJOR == 3 && HIP_VERSION_MINOR >= 6)
+  return props.gcnArchName;
+#else
+  return "gfx" + std::to_string(props.gcnArch);
+#endif
+}
 
 model create_context(bool silent, const std::vector<std::string> &args) {
   struct Device {
@@ -35,7 +45,7 @@ model create_context(bool silent, const std::vector<std::string> &args) {
     clover::checkError(hipGetDeviceProperties(&props, i));
     devices[i] = {i, std::string(props.name) + " (" +                                        //
                          std::to_string(props.totalGlobalMem / 1024 / 1024) + "MB;" +        //
-                         "sm_" + std::to_string(props.major) + std::to_string(props.minor) + //
+                         device_arch(props) +                                              //
                          ")"};
   }
   auto [device, parsed] = list_and_parse<Device>(
@@ -51,7 +61,7 @@ void report_context(const clover::context &) {
   clover::checkError(hipGetDeviceProperties(&props, device));
   std::cout << " - Device: " //
             << props.name << " (" << (props.totalGlobalMem / 1024 / 1024) << "MB;"
-            << "gfx" << props.gcnArch << ")" << std::endl;
+            << device_arch(props) << ")" << std::endl;
   std::cout << " - HIP managed memory: "
             <<
 #ifdef CLOVER_MANAGED_ALLOC

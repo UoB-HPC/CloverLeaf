@@ -77,7 +77,8 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
     int xmin = t.info.t_xmin;
     auto &field = t.field;
 
-#if defined(__HIPSYCL__) || defined(__OPENSYCL__)
+#if defined(__ADAPTIVECPP__) || defined(__ACPP__) || defined(__HIPSYCL__) || defined(__OPENSYCL__)
+    summaryResults[0] = {};
     auto reduction = sycl::reduction(summaryResults.data, {}, sycl::plus<summary>());
 #else
     auto reduction =

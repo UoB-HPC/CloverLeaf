@@ -65,7 +65,7 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
     auto xvel0_ = xvel0.access<R>(h);
     auto yvel0_ = yvel0.access<R>(h);
 
-  #if defined(__HIPSYCL__) || defined(__OPENSYCL__)
+  #if defined(__ADAPTIVECPP__) || defined(__ACPP__) || defined(__HIPSYCL__) || defined(__OPENSYCL__)
     h.parallel_for(                                                                     //
         sycl::range<2>(sycl::range<2>(policy.sizeX, policy.sizeY)),                     //
         sycl::reduction(minResults.access<RW>(h), dt_min_val, sycl::minimum<double>()), //

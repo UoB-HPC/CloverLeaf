@@ -19,12 +19,15 @@
 
 #pragma once
 
+#if __has_include(<sycl/sycl.hpp>)
+#include <sycl/sycl.hpp>
+#else
 #include <CL/sycl.hpp>
+using namespace cl;
+#endif
 #include <vector>
 
 #include "shared.h"
-
-using namespace cl;
 
 using sycl::accessor;
 using sycl::buffer;

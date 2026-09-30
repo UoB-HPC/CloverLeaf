@@ -72,7 +72,7 @@ void clover_report_step(global_variables &globals, parallel_ &parallel, //
   }
   if (globals.complete) {
     if (parallel.boss) {
-      if (globals.config.test_problem >= 1) {
+      if (globals.config.test_problem != 0) {
         double qa_diff{};
         if (globals.config.test_problem == 1) {
           qa_diff = std::fabs((100.0 * (ke / 1.82280367310258)) - 100.0);
@@ -99,7 +99,7 @@ void clover_report_step(global_variables &globals, parallel_ &parallel, //
         std::cout << " Test problem " << globals.config.test_problem << " is within " << qa_diff << "% of the expected solution"
                   << std::endl;
         g_out << "Test problem " << globals.config.test_problem << " is within " << qa_diff << "% of the expected solution" << std::endl;
-        if (!std::isnan(qa_diff) && qa_diff < 0.001) {
+        if (std::isfinite(qa_diff) && qa_diff < 0.001) {
           std::cout << " This test is considered PASSED" << std::endl;
           g_out << "This test is considered PASSED" << std::endl;
           globals.report_test_fail = false;
@@ -108,7 +108,14 @@ void clover_report_step(global_variables &globals, parallel_ &parallel, //
           g_out << "This test is considered NOT PASSED" << std::endl;
           globals.report_test_fail = true;
         }
+      } else {
+        std::cout << " Solution check SKIPPED: no test_problem specified" << std::endl;
+        g_out << "Solution check SKIPPED: no test_problem specified" << std::endl;
       }
     }
+    // Propagate the reference-check result so every MPI rank returns failure.
+    int test_fail = globals.report_test_fail ? 1 : 0;
+    clover_check_error(test_fail);
+    globals.report_test_fail = test_fail != 0;
   }
 }

@@ -53,7 +53,8 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
 
   clover::Buffer1D<double> minResults(ctx, 1);
 
-#if defined(__HIPSYCL__) || defined(__OPENSYCL__)
+#if defined(__ADAPTIVECPP__) || defined(__ACPP__) || defined(__HIPSYCL__) || defined(__OPENSYCL__)
+  minResults[0] = dt_min_val;
   auto reduction = sycl::reduction(minResults.data, dt_min_val, sycl::minimum<double>());
 #else
   auto reduction =

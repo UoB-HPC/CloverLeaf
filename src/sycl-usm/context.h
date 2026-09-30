@@ -19,7 +19,12 @@
 
 #pragma once
 
+#if __has_include(<sycl/sycl.hpp>)
+#include <sycl/sycl.hpp>
+#else
 #include <CL/sycl.hpp>
+using namespace cl;
+#endif
 #include <iostream>
 #include <utility>
 
@@ -27,8 +32,6 @@
 
 #define SYCL_DEBUG   // enable for debugging SYCL related things, also syncs kernel calls
 #define SYNC_KERNELS // enable for fully synchronous (e.g queue.wait_and_throw()) kernel calls
-
-using namespace cl;
 
 namespace clover {
 

@@ -74,7 +74,7 @@ void clover_allocate_buffers(global_variables &globals, parallel_ &parallel) {
     //		globals.chunk.hm_top_rcv_buffer = Kokkos::create_mirror_view(globals.chunk.top_rcv_buffer);
   }
 }
-#if !(defined(__HIPSYCL__) || defined(__OPENSYCL__))
+#if !(defined(__ADAPTIVECPP__) || defined(__ACPP__) || defined(__HIPSYCL__) || defined(__OPENSYCL__))
 template <typename A> decltype(auto) get_native_ptr_or_throw(sycl::interop_handle &ih, A accessor) {
   using sycl::backend;
   using T = std::remove_cv_t<typename decltype(accessor)::value_type>;
@@ -125,7 +125,7 @@ void clover_send_recv_message(global_variables &globals, chunk_neighbour_type tp
     MPI_Isend(snd_buffer.access_ptr<R>(total_size), total_size, MPI_DOUBLE, task, tag_send, MPI_COMM_WORLD, &req_send);
     MPI_Irecv(rcv_buffer.access_ptr<W>(total_size), total_size, MPI_DOUBLE, task, tag_recv, MPI_COMM_WORLD, &req_recv);
   } else {
-  #if defined(__HIPSYCL__) || defined(__OPENSYCL__)
+  #if defined(__ADAPTIVECPP__) || defined(__ACPP__) || defined(__HIPSYCL__) || defined(__OPENSYCL__)
     auto d = globals.context.queue.get_device();
     // Construct the buffers so that get_pointer is not nullptr, only happens once per rank for the lifetime of the program
     if (!rcv_buffer.buffer.get_pointer(d))
@@ -164,7 +164,7 @@ void clover_wait_messages(global_variables &globals, int message_count, std::arr
 #else
   if (globals.config.staging_buffer) MPI_Waitall(message_count, request.data(), MPI_STATUS_IGNORE);
   else {
-  #if defined(__HIPSYCL__) || defined(__OPENSYCL__)
+  #if defined(__ADAPTIVECPP__) || defined(__ACPP__) || defined(__HIPSYCL__) || defined(__OPENSYCL__)
     globals.context.queue.wait_and_throw();
     MPI_Waitall(message_count, request.data(), MPI_STATUS_IGNORE);
   #else

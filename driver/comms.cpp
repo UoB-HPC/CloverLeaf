@@ -214,10 +214,6 @@ std::vector<tile_info> clover_tile_decompose(global_variables &globals, int chun
       tiles[tile].tile_neighbours[tile_bottom] = tile_x * (ty - 2) + tx;
       tiles[tile].tile_neighbours[tile_top] = tile_x * (ty) + tx;
 
-      // initial set the external tile mask to 0 for each tile
-      for (int i = 0; i < 4; ++i) {
-        tiles[tile].external_tile_mask[i] = 0;
-      }
 
       if (tx == 1) {
         tiles[tile].tile_neighbours[tile_left] = external_tile;

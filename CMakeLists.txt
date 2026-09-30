@@ -179,7 +179,7 @@ set(MODEL_SRC
         update_tile_halo_kernel.cpp
         viscosity.cpp)
 
-# register out models <model_name> <preprocessor_def_name> <source files...>
+# register our models <model_name> <preprocessor_def_name> <source files...>
 register_model(omp USE_OMP ${MODEL_SRC})
 register_model(omp-target USE_OMP_TARGET ${MODEL_SRC})
 register_model(serial USE_SERIAL ${MODEL_SRC})
@@ -191,11 +191,6 @@ register_model(kokkos USE_KOKKOS ${MODEL_SRC})
 register_model(acc ACC ${MODEL_SRC})
 register_model(sycl-acc USE_SYCL_ACC ${MODEL_SRC})
 register_model(sycl-usm USE_SYCL_USM ${MODEL_SRC})
-
-#register_model(acc ACC fasten.hpp)
-# defining RAJA collides with the RAJA namespace so USE_RAJA
-#register_model(raja USE_RAJA fasten.hpp)
-#register_model(tbb TBB fasten.hpp)
 
 set(USAGE ON CACHE BOOL "Whether to print all custom flags for the selected model")
 
@@ -310,3 +305,101 @@ target_compile_definitions(${EXE_NAME} PRIVATE)
 set_target_properties(${EXE_NAME} PROPERTIES OUTPUT_NAME "${BIN_NAME}")
 
 install(TARGETS ${EXE_NAME} DESTINATION bin)
+
+include(CTest)
+if (BUILD_TESTING)
+    set(case_timeout 60)
+    set(reference_timeout 900)
+    if (MODEL STREQUAL "serial")
+        set(reference_timeout 3600)
+    endif ()
+    if (SYCL_COMPILER STREQUAL "ADAPTIVECPP" OR ACPP_PCUDA_DRIVER)
+        set(case_timeout 180)
+    endif ()
+
+    function(add_solution_case name deck outcome problem)
+        cmake_parse_arguments(CASE "" "TIMEOUT" "OUTPUT;REPORT" ${ARGN})
+        if (NOT CASE_TIMEOUT)
+            set(CASE_TIMEOUT ${case_timeout})
+        endif ()
+        set(ranks 1)
+        if (ENABLE_MPI AND MPIEXEC_EXECUTABLE)
+            list(APPEND ranks 2)
+        endif ()
+        foreach(rank_count IN LISTS ranks)
+            set(test "solution_${name}")
+            set(threads 2)
+            if (rank_count EQUAL 2)
+                string(APPEND test "_mpi")
+                set(threads 1)
+            endif ()
+            set(directory "${CMAKE_CURRENT_BINARY_DIR}/tests/${test}")
+            file(MAKE_DIRECTORY "${directory}")
+            set(input "${directory}/clover.in")
+            set(report "${directory}/clover.out")
+            file(WRITE "${input}" "${deck}")
+
+            set(expected_exit 0)
+            if (outcome STREQUAL "FAILED")
+                set(expected_exit 1)
+            elseif (outcome STREQUAL "ABORT")
+                set(expected_exit nonzero)
+            endif ()
+            set(command "$<TARGET_FILE:${EXE_NAME}>" --file "${input}" --out "${report}")
+            if (rank_count EQUAL 2)
+                set(command "${MPIEXEC_EXECUTABLE}" ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
+                    sh ${MPIEXEC_POSTFLAGS} "${CMAKE_CURRENT_SOURCE_DIR}/tests/mpi_rank_check.sh"
+                    "$<TARGET_FILE:${EXE_NAME}>" "${input}" "${report}")
+                if (NOT outcome STREQUAL "ABORT")
+                    list(APPEND command "${expected_exit}")
+                    set(expected_exit 0)
+                endif ()
+            endif ()
+
+            set(expected_output " - Total ranks: ${rank_count}" ${CASE_OUTPUT})
+            if (NOT outcome STREQUAL "ABORT")
+                list(APPEND expected_output " - Outcome: ${outcome}" " - Problem: ${problem}")
+            endif ()
+            add_test(NAME ${test}
+                COMMAND ${CMAKE_COMMAND} "-DTEST_COMMAND=${command}" "-DEXPECT_EXIT=${expected_exit}"
+                        "-DEXPECT_OUTPUT=${expected_output}" "-DEXPECT_REPORT=${CASE_REPORT}"
+                        "-DFORBID_PASSED=$<STREQUAL:${outcome},SKIPPED>" "-DREPORT=${report}"
+                        -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/check.cmake")
+            set_tests_properties(${test} PROPERTIES
+                WORKING_DIRECTORY "${directory}" TIMEOUT ${CASE_TIMEOUT} PROCESSORS 2
+                ENVIRONMENT "OMP_NUM_THREADS=${threads};ACPP_APPDB_DIR=${directory}/jit")
+        endforeach()
+    endfunction()
+
+    set(reference_input "${PROJECT_SOURCE_DIR}/InputDecks/clover_bm16_short.in")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${reference_input}")
+    file(READ "${reference_input}" reference_deck)
+    add_solution_case(reference "${reference_deck}" PASSED 4 TIMEOUT ${reference_timeout})
+
+    set(base_deck "*clover
+state 1 density=0.2 energy=1.0
+state 2 density=1.0 energy=2.5 geometry=rectangle xmin=0.0 xmax=5.0 ymin=0.0 ymax=2.0
+x_cells=10
+y_cells=2
+xmin=0.0
+ymin=0.0
+xmax=10.0
+ymax=2.0
+initial_timestep=0.04
+timestep_rise=1.5
+max_timestep=0.04
+end_time=3.0
+")
+    string(REPLACE "energy=2.5" "energy=2.0" wrong_deck "${base_deck}")
+    add_solution_case(wrong_solution "${wrong_deck}test_problem 1\n" FAILED 1)
+    add_solution_case(unchecked "${base_deck}*endclover\n" SKIPPED none)
+    add_solution_case(disabled "${base_deck}test_problem 0\n" SKIPPED none)
+    add_solution_case(unknown "${base_deck}test_problem 999" FAILED 999)
+    add_solution_case(negative "${base_deck}test_problem -1\n" FAILED -1)
+    string(REPLACE " " "\t" tab_deck "${base_deck}")
+    add_solution_case(whitespace " \t\n${tab_deck}\t test_problem\t=\t1\r" PASSED 1)
+    add_solution_case(arbitrary_stop "${base_deck}end_step=7\nsummary_frequency=0\n" SKIPPED none)
+    string(REPLACE "x_cells=10" "x_cells=23" different_deck "${base_deck}")
+    string(REPLACE "y_cells=2" "y_cells=11" different_deck "${different_deck}")
+    add_solution_case(different_mesh "${different_deck}end_step=13\nsummary_frequency=3\n" SKIPPED none)
+endif ()

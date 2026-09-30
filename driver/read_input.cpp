@@ -27,7 +27,7 @@
 
 #include "report.h"
 
-#include <cstring>
+#include <algorithm>
 #include <iostream>
 #include <iterator>
 #include <sstream>
@@ -92,14 +92,11 @@ void read_input(std::ifstream &g_in, parallel_ &parallel, global_config &globals
   std::string line;
 
   // Count the number of "state ..." lines in the input file
-  while (true) {
-    std::getline(g_in, line);
-    if (g_in.eof()) break;
-    if (line.empty()) continue;
-
+  while (std::getline(g_in, line)) {
     // Break on spaces
     std::istringstream iss(line);
     std::vector<std::string> words((std::istream_iterator<std::string>(iss)), std::istream_iterator<std::string>());
+    if (words.empty()) continue;
     if (words[0] == "state") {
       state_max = std::max(state_max, std::stoi(words[1]));
     }
@@ -122,23 +119,14 @@ void read_input(std::ifstream &g_in, parallel_ &parallel, global_config &globals
   g_in.clear();
   g_in.seekg(0);
 
-  while (true) {
-    std::getline(g_in, line);
-    if (g_in.eof()) break;
-    if (line.empty()) continue;
-
-    // Split line on spaces and =
-    std::vector<std::string> words;
-    std::string local = line;
-//    char *c_line = new char[line.size() + 1];
-//    std::strcpy(c_line, line.c_str());
-    for (char *w = std::strtok(local.data(), " ="); w != nullptr; w = std::strtok(nullptr, " =")) {
-      words.emplace_back(w);
-    }
+  while (std::getline(g_in, line)) {
+    // Split on whitespace and =, including tab-indented input decks.
+    std::replace(line.begin(), line.end(), '=', ' ');
+    std::istringstream iss(line);
+    std::vector<std::string> words((std::istream_iterator<std::string>(iss)), std::istream_iterator<std::string>());
+    if (words.empty()) continue;
 
     // Set options based on keywords
-    if (words[0].empty()) break;
-
     if (words[0] == "initial_timestep") {
       globals.dtinit = std::stod(words[1]);
       if (parallel.boss) g_out << " initial_timestep " << globals.dtinit << std::endl;

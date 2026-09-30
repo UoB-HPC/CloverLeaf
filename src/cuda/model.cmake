@@ -34,9 +34,11 @@ register_flag_optional(SYNC_ALL_KERNELS
 
 macro(setup)
 
-    # XXX CMake 3.18 supports CMAKE_CUDA_ARCHITECTURES/CUDA_ARCHITECTURES but we support older CMakes
+    # Keep the explicit -arch flag below without also letting CMake add one.
+    # Older CMake versions do not have this policy or CUDA_ARCHITECTURES.
     if (POLICY CMP0104)
-        cmake_policy(SET CMP0104 OLD)
+        cmake_policy(SET CMP0104 NEW)
+        set(CMAKE_CUDA_ARCHITECTURES OFF)
     endif ()
 
     set(CMAKE_CXX_STANDARD 17)

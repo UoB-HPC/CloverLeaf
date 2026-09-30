@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
   if (parallel.boss) {
     std::cout << "Result:\n"
               << " - Problem: " << (config.config.test_problem == 0 ? "none" : std::to_string(config.config.test_problem)) << "\n"
-              << " - Outcome: " << (config.report_test_fail ? "FAILED" : "PASSED") << std::endl;
+              << " - Outcome: " << (config.report_test_fail ? "FAILED" : (config.config.test_problem == 0 ? "SKIPPED" : "PASSED")) << std::endl;
   }
   return config.report_test_fail ? EXIT_FAILURE : EXIT_SUCCESS;
 }

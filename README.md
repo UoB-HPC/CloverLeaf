@@ -41,7 +41,7 @@ against is required.
 
 ### CMake
 
-The project supports building with CMake >= 3.13.0, which can be installed without root via
+The project supports building with CMake >= 3.14.0, which can be installed without root via
 the [official script](https://cmake.org/download/).
 
 Each implementation (programming model) is built as follows:
@@ -156,6 +156,17 @@ Output: |+1
 Result:
   - Problem: 2
   - Outcome: PASSED
+```
+
+## Testing
+
+The `test_problem` option selects a reference solution check. If omitted, the check reports `SKIPPED`.
+Failed reference checks return a nonzero exit status.
+
+Run the 87-step `clover_bm16_short.in` reference case and regression tests after building:
+
+```shell
+$ ctest --test-dir build --output-on-failure
 ```
 
 # Licence
