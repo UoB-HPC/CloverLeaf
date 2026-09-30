@@ -220,17 +220,18 @@ static void par_ranged2(const Range2d &r, F functor, const char *file = CLOVER_B
 template <typename T, int offset> struct reduce {
   template<class F>
   __device__ inline static void run(T *array, T* out, F func) {
-    if (offset > 16) __syncthreads(); // only need to sync if not working within a warp
-    if (threadIdx.x < offset) {       // only continue if it's in the lower half
-      array[threadIdx.x] = func(array[threadIdx.x], array[threadIdx.x + offset]);
-      reduce<T, offset / 2>::run(array, out, func);
-    }
+    if (offset > warpSize / 2) __syncthreads();
+    else __syncwarp();
+    if (threadIdx.x < offset) array[threadIdx.x] = func(array[threadIdx.x], array[threadIdx.x + offset]);
+    reduce<T, offset / 2>::run(array, out, func);
   }
 };
 
 template <typename T> struct reduce<T, 0> {
   template<class F>
-  __device__ inline static void run(T *array, T *out, F func) { out[blockIdx.x] = array[0]; }
+  __device__ inline static void run(T *array, T *out, F func) {
+    if (threadIdx.x == 0) out[blockIdx.x] = array[0];
+  }
 };
 
 } // namespace clover
