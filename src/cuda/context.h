@@ -25,10 +25,12 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <cuda.h>
 
 #include "shared.h"
 
 #define CLOVER_DEFAULT_BLOCK_SIZE (256)
+
 #define DEVICE_KERNEL __host__ __device__
 
 // #define CLOVER_SYNC_ALL_KERNELS
@@ -216,7 +218,8 @@ static void par_ranged2(const Range2d &r, F functor, const char *file = CLOVER_B
 }
 
 template <typename T, int offset> struct reduce {
-  __device__ inline static void run(T *array, T *out, T (*func)(T, T)) {
+  template<class F>
+  __device__ inline static void run(T *array, T* out, F func) {
     if (offset > 16) __syncthreads(); // only need to sync if not working within a warp
     if (threadIdx.x < offset) {       // only continue if it's in the lower half
       array[threadIdx.x] = func(array[threadIdx.x], array[threadIdx.x + offset]);
@@ -226,7 +229,8 @@ template <typename T, int offset> struct reduce {
 };
 
 template <typename T> struct reduce<T, 0> {
-  __device__ inline static void run(T *array, T *out, T (*)(T, T)) { out[blockIdx.x] = array[0]; }
+  template<class F>
+  __device__ inline static void run(T *array, T *out, F func) { out[blockIdx.x] = array[0]; }
 };
 
 } // namespace clover

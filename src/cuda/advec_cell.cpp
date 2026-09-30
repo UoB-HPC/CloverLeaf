@@ -71,6 +71,9 @@ void advec_cell_kernel(int x_min, int x_max, int y_min, int y_max, int dir, int 
         downwind = j;
         dif = donor;
       } else {
+#ifdef __ACPP_PCUDA__
+        using std::min;
+#endif
         upwind = min(j + 1, x_max + 2); // XXX can't do std::min because CUDA
         donor = j;
         downwind = j - 1;
@@ -160,6 +163,10 @@ void advec_cell_kernel(int x_min, int x_max, int y_min, int y_max, int dir, int 
         downwind = k;
         dif = donor;
       } else {
+#ifdef __ACPP_PCUDA__
+        using std::min;
+#endif
+
         upwind = min(k + 1, y_max + 2); // XXX can't do std::min because CUDA
         donor = k;
         downwind = k - 1;
