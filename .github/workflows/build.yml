@@ -14,7 +14,7 @@ jobs:
   build:
     name: ${{ matrix.architecture }}
     runs-on: ${{ matrix.architecture == 'aarch64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
-    timeout-minutes: ${{ matrix.model == 'serial' && 90 || 30 }}
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       max-parallel: 1
@@ -32,6 +32,8 @@ jobs:
       CI_APT_KEY: ${{ matrix.architecture == 'aarch64' && matrix.toolchain.arm_apt_key || matrix.toolchain.apt_key }}
       CI_APT_SOURCE: ${{ matrix.architecture == 'aarch64' && matrix.toolchain.arm_apt_source || matrix.toolchain.apt_source }}
       CI_ENV_SCRIPT: ${{ matrix.toolchain.env_script }}
+      CI_NATIVE_CXX_FLAGS: ${{ matrix.toolchain.native_flags || (matrix.architecture == 'aarch64' && '-mcpu=native' || '-march=native -mtune=native') }}
+      CI_NATIVE_CUDA_FLAGS: ${{ matrix.toolchain.native_cuda && (matrix.architecture == 'aarch64' && '-Xcompiler=-mcpu=native' || '-Xcompiler=-march=native,-mtune=native') || '' }}
       CI_KOKKOS_REF: ${{ matrix.kokkos_ref }}
       CI_ADAPTIVECPP_SOURCE_URL: ${{ matrix.toolchain.source_url }}
       CI_ADAPTIVECPP_SHA256: ${{ matrix.toolchain.sha256 }}
@@ -90,6 +92,7 @@ jobs:
             --env DEBIAN_FRONTEND=noninteractive \
             --env CC --env CXX --env CI_BUILD_DIR --env CI_MODEL \
             --env CI_PACKAGES --env CI_APT_KEY --env CI_APT_SOURCE --env CI_ENV_SCRIPT \
+            --env ACT --env CI_NATIVE_CXX_FLAGS --env CI_NATIVE_CUDA_FLAGS \
             --env CI_KOKKOS_REF --env CI_MPICH_SOURCE_URL --env CI_MPICH_SHA256 \
             --env CI_ADAPTIVECPP_SOURCE_URL --env CI_ADAPTIVECPP_SHA256 \
             --env CI_MPI_CC --env CI_MPI_CXX --env CI_MPI_EXEC --env CI_CMAKE_ARGS \

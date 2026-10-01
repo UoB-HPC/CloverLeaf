@@ -83,7 +83,7 @@ jobs:
               packages: "intel-oneapi-dpcpp-cpp-2025.3", apt_key: "https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB", apt_source: "https://apt.repos.intel.com/oneapi
                 all main", env_script: "/opt/intel/oneapi/setvars.sh"}}
           - {variant: "oneapi-omp", model: "omp", toolchain: *oneapi}
-          - {variant: "nvhpc-serial", model: "serial", toolchain: &nvhpc {image: "nvcr.io/nvidia/nvhpc:26.5-devel-cuda13.2-ubuntu24.04", cc: "nvc", cxx: "nvc++", cleanup_disk: true}}
+          - {variant: "nvhpc-serial", model: "serial", toolchain: &nvhpc {image: "nvcr.io/nvidia/nvhpc:26.5-devel-cuda13.2-ubuntu24.04", cc: "nvc", cxx: "nvc++", native_flags: "-tp=native", cleanup_disk: true}}
           - {variant: "nvhpc-omp", model: "omp", toolchain: *nvhpc}
           - {variant: "gcc-13-omp-target", model: "omp-target", toolchain: *gcc_13}
           - {variant: "gcc-13-std-indices", model: "std-indices", toolchain: *gcc_13}
@@ -99,7 +99,7 @@ jobs:
           - {variant: "adaptivecpp-pcuda", model: "cuda", cmake_args: "-DACPP_PCUDA_DRIVER=ON -DCMAKE_CXX_COMPILER=/opt/adaptivecpp/bin/acpp -DCMAKE_CUDA_COMPILER=/opt/adaptivecpp/bin/acpp -DCUDA_EXTRA_FLAGS=--acpp-targets=generic",
             toolchain: *adaptivecpp}
           - {variant: "cuda", model: "cuda", cmake_args: "-DCMAKE_CUDA_COMPILER=/usr/local/cuda-13.2/bin/nvcc -DCUDA_ARCH=sm_80", skip_tests: true, toolchain: {image: "docker.io/library/ubuntu:24.04",
-              cc: "gcc", cxx: "g++", packages: "cuda-nvcc-13-2", arm_apt_key: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/sbsa/3bf863cc.pub",
+              cc: "gcc", cxx: "g++", packages: "cuda-nvcc-13-2", native_cuda: true, arm_apt_key: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/sbsa/3bf863cc.pub",
               arm_apt_source: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/sbsa/ /",
               apt_key: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/3bf863cc.pub", apt_source: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/
                 /"}}
