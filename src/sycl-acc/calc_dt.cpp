@@ -17,7 +17,7 @@
  CloverLeaf. If not, see http://www.gnu.org/licenses/.
  */
 
-#include <cmath>
+#include <algorithm>
 
 #include "calc_dt.h"
 #include "context.h"
@@ -72,23 +72,19 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
         [=](sycl::item<2> idxNoOffset, auto &acc) {
           const auto idx = clover::offset(idxNoOffset, policy.fromX, policy.fromY);
   #else
-    // FIXME maxThreadPerBlock = N with nd_range launch is a workaround for https://github.com/intel/llvm/issues/8414
-    //  A normal non-nd_range launch blows the register budget as the thread-per-block is passed directly to CUDA PI.
-    //  It's unclear how this workaround would affect other platforms.
-    size_t maxThreadPerBlock = 256;
-    size_t localX = std::ceil(double(policy.sizeX) / double(maxThreadPerBlock));
-    size_t localY = std::ceil(double(policy.sizeY) / double(maxThreadPerBlock));
-
-    auto uniformLocalX = policy.sizeX % localX == 0 ? localX : policy.sizeX + (localX - policy.sizeX % localX);
-    auto uniformLocalY = policy.sizeY % localY == 0 ? localY : policy.sizeY + (localY - policy.sizeY % localY);
-    uniformLocalX = uniformLocalX >= policy.sizeX ? 1 : uniformLocalX;
-    uniformLocalY = uniformLocalY >= policy.sizeY ? 1 : uniformLocalY;
-    h.parallel_for(                                                                                                  //
-        sycl::nd_range<2>(sycl::range<2>(policy.sizeX, policy.sizeY), sycl::range<2>(uniformLocalX, uniformLocalY)), //
+    // An explicit work-group size avoids excessive register use with an implicit launch: https://github.com/intel/llvm/issues/8414
+    const size_t cellCount = policy.sizeX * policy.sizeY;
+    const size_t maxWorkGroupSize = ctx.queue.get_device().get_info<sycl::info::device::max_work_group_size>();
+    const size_t localSize = std::min<size_t>(256, maxWorkGroupSize);
+    const size_t globalSize = ((cellCount + localSize - 1) / localSize) * localSize;
+    h.parallel_for( //
+        sycl::nd_range<1>(sycl::range<1>(globalSize), sycl::range<1>(localSize)), //
         sycl::reduction(minResults.buffer, h, dt_min_val, sycl::minimum<>(),
                         sycl::property::reduction::initialize_to_identity()), //
-        [=](sycl::nd_item<2> idxNoOffset, auto &acc) {
-          const auto idx = clover::offset(idxNoOffset.get_global_id(), policy.fromX, policy.fromY);
+        [=](sycl::nd_item<1> item, auto &acc) {
+          const size_t linear = item.get_global_id(0);
+          if (linear >= cellCount) return;
+          const auto idx = sycl::id<2>(linear / policy.sizeY + policy.fromX, linear % policy.sizeY + policy.fromY);
   #endif
           double dsx = celldx_[idx[0]];
           double dsy = celldy_[idx[1]];
