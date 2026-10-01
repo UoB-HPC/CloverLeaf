@@ -19,7 +19,6 @@
 
 #include <cstring>
 #include <functional>
-#include <algorithm>
 #include <sys/stat.h>
 #include <sys/types.h>
 
