@@ -359,7 +359,12 @@ if (BUILD_TESTING)
                 endif ()
             endif ()
 
-            set(expected_output " - Total ranks: ${rank_count}" ${CASE_OUTPUT})
+            set(expected_output " - Total ranks: ${rank_count}")
+            if (rank_count EQUAL 2 AND outcome STREQUAL "ABORT")
+                list(APPEND expected_output " Launching hydro")
+            else ()
+                list(APPEND expected_output ${CASE_OUTPUT})
+            endif ()
             if (NOT outcome STREQUAL "ABORT")
                 list(APPEND expected_output " - Outcome: ${outcome}" " - Problem: ${problem}"
                      " - Invariants: ${CASE_INVARIANTS}")

@@ -17,6 +17,7 @@ jobs:
     timeout-minutes: ${{ matrix.model == 'serial' && 90 || 30 }}
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         architecture: ${{ fromJSON(inputs.configuration).toolchain.architectures || fromJSON('["x86_64", "aarch64"]') }}
         include: ${{ fromJSON(format('[{0}]', inputs.configuration)) }}
@@ -69,8 +70,8 @@ jobs:
             mkdir -p "$cli_dir"
             as_root=()
             if command -v sudo >/dev/null 2>&1; then as_root=(sudo); fi
-            "${as_root[@]}" apt-get update
-            (cd "$cli_dir" && apt-get download docker.io)
+            "${as_root[@]}" apt-get -o Acquire::Retries=5 update
+            (cd "$cli_dir" && apt-get -o Acquire::Retries=5 download docker.io)
             dpkg-deb --fsys-tarfile "$cli_dir"/docker.io_*.deb |
               tar -x -C "$cli_dir" --strip-components=3 ./usr/bin/docker
             echo "$cli_dir" >> "$GITHUB_PATH"
@@ -101,7 +102,7 @@ jobs:
 
       - name: Upload failure logs
         if: failure() && !env.ACT
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: logs-${{ matrix.variant }}-${{ matrix.mpi }}-${{ matrix.architecture }}
           path: |
