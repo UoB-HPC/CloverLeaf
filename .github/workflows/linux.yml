@@ -5,16 +5,11 @@ on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 
-concurrency:
-  group: linux-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   build:
     name: ${{ matrix.variant }} / ${{ matrix.mpi }}
     strategy:
       fail-fast: false
-      max-parallel: 4
       matrix:
         # prettier-ignore
         variant: [

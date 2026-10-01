@@ -17,7 +17,6 @@ jobs:
     timeout-minutes: ${{ matrix.model == 'serial' && 90 || 30 }}
     strategy:
       fail-fast: false
-      max-parallel: 1
       matrix:
         architecture: ${{ fromJSON(inputs.configuration).toolchain.architectures || fromJSON('["x86_64", "aarch64"]') }}
         include: ${{ fromJSON(format('[{0}]', inputs.configuration)) }}
