@@ -21,6 +21,7 @@
 
 #include "comms.h"
 #include "definitions.h"
+#include <cstdlib>
 #include <functional>
 #include <algorithm>
 #include <iomanip>
@@ -87,12 +88,22 @@ std::pair<T, run_args> list_and_parse(bool silent, const std::vector<T> &devices
         << "                                         Defaults to auto which elides the buffer if a device-aware (i.e CUDA-aware) is used.\n"
         << "                                         This option is no-op for CPU-only models.\n"
         << "                                         Setting this to false on an MPI that is not device-aware may cause a segfault.\n"
+        << "\nEnvironment:\n"
+        << "  CLOVERLEAF_DEVICE                      Default for --device; the command line takes precedence.\n"
         << std::endl;
   };
 
+  auto effectiveArgs = args;
+  if (std::find(args.begin(), args.end(), "--device") == args.end()) {
+    if (const char *value = std::getenv("CLOVERLEAF_DEVICE"); value != nullptr && value[0] != '\0') {
+      effectiveArgs.emplace_back("--device");
+      effectiveArgs.emplace_back(value);
+    }
+  }
+
   const auto readParam = [&](size_t &current, const std::string &emptyMessage, auto map) {
-    if (current + 1 < args.size()) {
-        map(args[current + 1]);
+    if (current + 1 < effectiveArgs.size()) {
+        map(effectiveArgs[current + 1]);
         current++;
     } else {
       std::cerr << emptyMessage << std::endl;
@@ -110,8 +121,8 @@ std::pair<T, run_args> list_and_parse(bool silent, const std::vector<T> &devices
 
   T device = std::move(devices[0]);
   auto config = run_args{"", "clover.in", "clover.out", run_args::staging_buffer::automatic, {}};
-  for (size_t i = 0; i < args.size(); ++i) {
-    const auto &arg = args[i];
+  for (size_t i = 0; i < effectiveArgs.size(); ++i) {
+    const auto &arg = effectiveArgs[i];
     if (arg == "--help" || arg == "-h") {
       printHelp();
       std::exit(EXIT_SUCCESS);

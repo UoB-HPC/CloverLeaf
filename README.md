@@ -104,6 +104,8 @@ Options:
                                          This option is no-op for CPU-only models.
                                          Setting this to false on an MPI that is not device-aware may cause a segfault.
 
+Environment:
+  CLOVERLEAF_DEVICE                      Default for --device; the command line takes precedence.
 
 ```
 
