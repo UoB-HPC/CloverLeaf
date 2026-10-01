@@ -74,7 +74,7 @@ void advec_cell_kernel(int x_min, int x_max, int y_min, int y_max, int dir, int 
             downwind = i;
             dif = donor;
           } else {
-            upwind = std::min(i + 1, x_max + 2);
+            upwind = std::min(i + 1, x_max + 3);
             donor = i;
             downwind = i - 1;
             dif = upwind;
@@ -166,7 +166,7 @@ void advec_cell_kernel(int x_min, int x_max, int y_min, int y_max, int dir, int 
             downwind = j;
             dif = donor;
           } else {
-            upwind = std::min(j + 1, y_max + 2);
+            upwind = std::min(j + 1, y_max + 3);
             donor = j;
             downwind = j - 1;
             dif = upwind;

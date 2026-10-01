@@ -209,11 +209,10 @@ std::vector<tile_info> clover_tile_decompose(global_variables &globals, int chun
       int bottom = globals.chunk.bottom + (ty - 1) * chunk_delta_y + add_y_prev;
       int top = bottom + chunk_delta_y - 1 + add_y;
 
-      tiles[tile].tile_neighbours[tile_left] = tile_x * (ty - 1) + tx - 1;
-      tiles[tile].tile_neighbours[tile_right] = tile_x * (ty - 1) + tx + 1;
-      tiles[tile].tile_neighbours[tile_bottom] = tile_x * (ty - 2) + tx;
-      tiles[tile].tile_neighbours[tile_top] = tile_x * (ty) + tx;
-
+      tiles[tile].tile_neighbours[tile_left] = tile - 1;
+      tiles[tile].tile_neighbours[tile_right] = tile + 1;
+      tiles[tile].tile_neighbours[tile_bottom] = tile - tile_x;
+      tiles[tile].tile_neighbours[tile_top] = tile + tile_x;
 
       if (tx == 1) {
         tiles[tile].tile_neighbours[tile_left] = external_tile;

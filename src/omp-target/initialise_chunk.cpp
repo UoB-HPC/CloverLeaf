@@ -35,13 +35,13 @@ void initialise_chunk(const int tile, global_variables &globals) {
 
   double ymin = globals.config.grid.ymin + dy * (double)(globals.chunk.tiles[tile].info.t_bottom - 1);
 
-  size_t x_min = globals.chunk.tiles[tile].info.t_xmin;
-  size_t x_max = globals.chunk.tiles[tile].info.t_xmax;
-  size_t y_min = globals.chunk.tiles[tile].info.t_ymin;
-  size_t y_max = globals.chunk.tiles[tile].info.t_ymax;
+  const int x_min = globals.chunk.tiles[tile].info.t_xmin;
+  const int x_max = globals.chunk.tiles[tile].info.t_xmax;
+  const int y_min = globals.chunk.tiles[tile].info.t_ymin;
+  const int y_max = globals.chunk.tiles[tile].info.t_ymax;
 
-  size_t xrange = (x_max + 3) - (x_min - 2) + 1;
-  size_t yrange = (y_max + 3) - (y_min - 2) + 1;
+  const int xrange = (x_max + 3) - (x_min - 2) + 1;
+  const int yrange = (y_max + 3) - (y_min - 2) + 1;
 
   // Take a reference to the lowest structure, as Kokkos device cannot necessarily chase through the structure.
   field_type &field = globals.chunk.tiles[tile].field;
@@ -64,8 +64,8 @@ void initialise_chunk(const int tile, global_variables &globals) {
     vertexdy[k] = dy;
   }
 
-  size_t xrange1 = (x_max + 2) - (x_min - 2) + 1;
-  size_t yrange1 = (y_max + 2) - (y_min - 2) + 1;
+  const int xrange1 = (x_max + 2) - (x_min - 2) + 1;
+  const int yrange1 = (y_max + 2) - (y_min - 2) + 1;
 
   double *cellx = field.cellx.data;
   double *celldx = field.celldx.data;

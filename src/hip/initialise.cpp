@@ -59,9 +59,9 @@ void report_context(const clover::context &) {
   clover::checkError(hipGetDevice(&device));
   hipDeviceProp_t props{};
   clover::checkError(hipGetDeviceProperties(&props, device));
-  std::cout << " - Device: " //
-            << props.name << " (" << (props.totalGlobalMem / 1024 / 1024) << "MB;"
-            << device_arch(props) << ")" << std::endl;
+  std::cout << " - Device: "
+            << yaml_quote(std::string(props.name) + " (" + std::to_string(props.totalGlobalMem / 1024 / 1024) +
+                          "MB;" + device_arch(props) + ")") << std::endl;
   std::cout << " - HIP managed memory: "
             <<
 #ifdef CLOVER_MANAGED_ALLOC

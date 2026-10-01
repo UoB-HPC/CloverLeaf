@@ -45,6 +45,24 @@ struct model {
   run_args args;
 };
 
+inline std::string yaml_quote(const std::string &value) {
+  constexpr char hex[] = "0123456789abcdef";
+  std::string result = "\"";
+  for (unsigned char c : value) {
+    if (c == '"' || c == '\\') {
+      result += '\\';
+      result += c;
+    } else if (c < 0x20 || c == 0x7f) {
+      result += "\\x";
+      result += hex[c >> 4];
+      result += hex[c & 0xf];
+    } else {
+      result += c;
+    }
+  }
+  return result + '"';
+}
+
 template <typename T>
 std::pair<T, run_args> list_and_parse(bool silent, const std::vector<T> &devices,              //
                                       const std::function<std::string(const T &)> &deviceName, //
@@ -87,7 +105,7 @@ std::pair<T, run_args> list_and_parse(bool silent, const std::vector<T> &devices
     if (silent) return;
     std::cout << "Devices:" << std::endl;
     for (size_t j = 0; j < devices.size(); ++j)
-      std::cout << " " << j << ": " << deviceName(devices[j]) << std::endl;
+      std::cout << " " << j << ": " << yaml_quote(deviceName(devices[j])) << std::endl;
   };
 
   T device = std::move(devices[0]);
@@ -110,8 +128,8 @@ std::pair<T, run_args> list_and_parse(bool silent, const std::vector<T> &devices
           device = devices.at(std::stoul(param));
         } catch (const std::exception &e) {
           if (!silent) {
-            std::cout << "# Unable to parse/select device index `" << param << "`:" << e.what() << std::endl;
-            std::cout << "# Attempting to match device with substring  `" << param << "`" << std::endl;
+            std::cerr << "# Unable to parse/select device index `" << param << "`:" << e.what() << std::endl;
+            std::cerr << "# Attempting to match device with substring  `" << param << "`" << std::endl;
           }
 
           auto matching = std::find_if(devices.begin(), devices.end(),
@@ -119,7 +137,7 @@ std::pair<T, run_args> list_and_parse(bool silent, const std::vector<T> &devices
           if (matching != devices.end()) {
             device = *matching;
             if (!silent) {
-              std::cout << "# Using first device matching substring `" << param << "`" << std::endl;
+              std::cerr << "# Using first device matching substring `" << param << "`" << std::endl;
             }
           } else if (devices.size() == 1)
             std::cerr << "# No matching device but there's only one device, will be using that anyway" << std::endl;

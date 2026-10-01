@@ -51,6 +51,6 @@ model create_context(bool silent, const std::vector<std::string> &args) {
 }
 
 void report_context(const clover::context &) {
-  std::cout << " - Backend space: " << typeid(Kokkos::DefaultExecutionSpace).name() << std::endl;
-  std::cout << " - Backend host space: " << typeid(Kokkos::DefaultHostExecutionSpace).name() << std::endl;
+  std::cout << " - Backend space: " << yaml_quote(typeid(Kokkos::DefaultExecutionSpace).name()) << std::endl;
+  std::cout << " - Backend host space: " << yaml_quote(typeid(Kokkos::DefaultHostExecutionSpace).name()) << std::endl;
 }

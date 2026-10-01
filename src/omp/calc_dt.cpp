@@ -95,7 +95,7 @@ void calc_dt_kernel(int x_min, int x_max, int y_min, int y_max, double dtmin, do
     auto xvel0_acc = xvel0;
     auto yvel0_acc = yvel0;
 
-    std::cout << "Timestep information:" << std::endl
+    std::cerr << "Timestep information:" << std::endl
               << "j, k                 : " << jldt << " " << kldt << std::endl
               << "x, y                 : " << cellx_acc[jldt] << " " << celly_acc[kldt] << std::endl
               << "timestep : " << dt_min_val << std::endl

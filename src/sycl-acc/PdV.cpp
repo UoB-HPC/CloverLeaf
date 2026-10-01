@@ -98,8 +98,8 @@ void PdV(global_variables &globals, bool predict) {
 
   globals.error_condition = 0;
 
-  clover::execute(globals.context.queue, [&](handler &h) {
-    for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {
+  for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {
+    clover::execute(globals.context.queue, [&](handler &h) {
       tile_type &t = globals.chunk.tiles[tile];
       PdV_kernel(h, predict, t.info.t_xmin, t.info.t_xmax, t.info.t_ymin, t.info.t_ymax, globals.dt,
                  t.field.xarea.access<R>(h),     //
@@ -115,8 +115,8 @@ void PdV(global_variables &globals, bool predict) {
                  t.field.xvel1.access<R>(h),     //
                  t.field.yvel0.access<R>(h),     //
                  t.field.yvel1.access<R>(h));
-    }
-  });
+    });
+  }
 
   clover_check_error(globals.error_condition);
   if (globals.profiler_on) globals.profiler.PdV += timer() - kernel_time;

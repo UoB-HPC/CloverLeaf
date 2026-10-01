@@ -59,6 +59,7 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
   double ie = 0.0;
   double ke = 0.0;
   double press = 0.0;
+  double invalid = 0.0;
 
 #if SYNC_BUFFERS
   globals.hostToDevice();
@@ -84,7 +85,7 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
     double *yvel0 = field.yvel0.data;
 
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
-    copy(vol, mass, ie, ke, press) reduction(+ : vol, mass, ie, ke, press)                 \
+    copy(vol, mass, ie, ke, press, invalid) reduction(+ : vol, mass, ie, ke, press, invalid)                 \
     present(volume[ : field.volume.N()], density0[ : field.density0.N()],                  \
             energy0[ : field.energy0.N()], pressure[ : field.pressure.N()],                \
             xvel0[ : field.xvel0.N()], yvel0[ : field.yvel0.N()])
@@ -100,11 +101,17 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
       }
       double cell_vol = volume[j + (k)*base_stride];
       double cell_mass = cell_vol * density0[j + (k)*base_stride];
+      const bool valid = cell_vol > 0.0 && cell_vol <= DBL_MAX &&
+                         density0[j + (k)*base_stride] > 0.0 && density0[j + (k)*base_stride] <= DBL_MAX &&
+                         energy0[j + (k)*base_stride] >= 0.0 && energy0[j + (k)*base_stride] <= DBL_MAX &&
+                         pressure[j + (k)*base_stride] >= 0.0 && pressure[j + (k)*base_stride] <= DBL_MAX &&
+                         vsqrd >= 0.0 && vsqrd <= DBL_MAX;
       vol += cell_vol;
       mass += cell_mass;
       ie += cell_mass * energy0[j + (k)*base_stride];
       ke += cell_mass * 0.5 * vsqrd;
       press += cell_vol * pressure[j + (k)*base_stride];
+      invalid += valid ? 0.0 : 1.0;
     }
   }
 
@@ -117,8 +124,9 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
   clover_sum(ie);
   clover_sum(ke);
   clover_sum(press);
+  clover_sum(invalid);
 
   if (globals.profiler_on) globals.profiler.summary += timer() - kernel_time;
 
-  clover_report_step(globals, parallel, vol, mass, ie, ke, mass);
+  clover_report_step(globals, parallel, vol, mass, ie, ke, press, invalid);
 }

@@ -43,7 +43,7 @@ void viscosity_kernel(handler &h, int x_min, int x_max, int y_min, int y_max, cl
         0.5 * (yvel0[clover::offset(idx, 1, 0)] + yvel0[clover::offset(idx, 1, 1)] - yvel0[idx] - yvel0[clover::offset(idx, 0, 1)]) /
             celldx[idx[0]];
     double pgradx = (pressure[clover::offset(idx, 1, 0)] - pressure[clover::offset(idx, -1, 0)]) / (celldx[idx[0]] + celldx[idx[0] + 1]);
-    double pgrady = (pressure[clover::offset(idx, 0, 1)] - pressure[clover::offset(idx, 0, -1)]) / (celldy[idx[1]] + celldy[idx[1] + 2]);
+    double pgrady = (pressure[clover::offset(idx, 0, 1)] - pressure[clover::offset(idx, 0, -1)]) / (celldy[idx[1]] + celldy[idx[1] + 1]);
     double pgradx2 = pgradx * pgradx;
     double pgrady2 = pgrady * pgrady;
     double limiter = ((0.5 * (ugrad) / celldx[idx[0]]) * pgradx2 + (0.5 * (vgrad) / celldy[idx[1]]) * pgrady2 + strain2 * pgradx * pgrady) /

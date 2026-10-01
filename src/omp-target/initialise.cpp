@@ -55,6 +55,6 @@ model create_context(bool silent, const std::vector<std::string> &args) {
 }
 
 void report_context(const clover::context &ctx) {
-  std::cout << " - Device: #" << omp_get_default_device() << ")"
+  std::cout << " - Device: " << omp_get_default_device() << "\n"
             << " - Target: " << (ctx.use_target ? "true" : "false") << std::endl;
 }

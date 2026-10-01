@@ -29,4 +29,4 @@ void report_error(char *location, char *error);
 void clover_report_step_header(global_variables &globals, parallel_ &parallel);
 
 void clover_report_step(global_variables &globals, parallel_ &parallel, //
-                        double vol, double mass, double ie, double ke, double press);
+                        double vol, double mass, double ie, double ke, double press, double invalid);

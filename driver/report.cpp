@@ -30,7 +30,7 @@
 
 void report_error(char *location, char *error) {
 
-  std::cout << std::endl
+  std::cerr << std::endl
             << " Error from " << location << ":" << std::endl
             << error << std::endl
             << " CLOVER is terminating." << std::endl
@@ -61,8 +61,31 @@ void clover_report_step_header(global_variables &globals, parallel_ &parallel) {
 }
 
 void clover_report_step(global_variables &globals, parallel_ &parallel, //
-                        double vol, double mass, double ie, double ke, double press) {
+                        double vol, double mass, double ie, double ke, double press, double invalid) {
   if (parallel.boss) {
+    if (globals.step == 0) {
+      globals.initial_mass = mass;
+      globals.initial_energy = ie + ke;
+      globals.initial_volume = (globals.config.grid.xmax - globals.config.grid.xmin) *
+                               (globals.config.grid.ymax - globals.config.grid.ymin);
+    }
+
+    constexpr double conservation_tolerance = 1.0e-6; // one PPM
+    const bool finite = std::isfinite(vol) && std::isfinite(mass) && std::isfinite(ie) && std::isfinite(ke) &&
+                        std::isfinite(ie + ke) && std::isfinite(press);
+    const bool conserved = globals.initial_mass > 0.0 && globals.initial_volume > 0.0 && mass > 0.0 && vol > 0.0 &&
+                           std::fabs(vol - globals.initial_volume) <= conservation_tolerance * globals.initial_volume;
+    if (!finite || !conserved || invalid != 0.0 || ie < 0.0 || ke < 0.0 || press < 0.0) {
+      if (!globals.report_invariant_fail) {
+        for (auto *out : {&std::cout, &g_out}) {
+          *out << " Invariant checks FAILED at step " << globals.step
+               << ": finite summaries=" << finite << ", invalid cells=" << invalid
+               << ", mass=" << mass << " (initial " << globals.initial_mass
+               << "), volume=" << vol << " (initial " << globals.initial_volume << ")" << std::endl;
+        }
+      }
+      globals.report_invariant_fail = true;
+    }
     auto formatting = g_out.flags();
     g_out << " step: " << globals.step << std::scientific << std::setw(15) << vol << std::scientific << std::setw(15) << mass
           << std::scientific << std::setw(15) << mass / vol << std::scientific << std::setw(15) << press / vol << std::scientific
@@ -72,6 +95,17 @@ void clover_report_step(global_variables &globals, parallel_ &parallel, //
   }
   if (globals.complete) {
     if (parallel.boss) {
+      for (auto *out : {&std::cout, &g_out}) {
+        *out << " Invariant checks " << (globals.report_invariant_fail ? "FAILED" : "PASSED") << std::endl;
+        *out << " Invalid cells at final summary: " << invalid << std::endl;
+        if (globals.initial_mass > 0.0) {
+          *out << " Relative mass change: " << (mass - globals.initial_mass) / globals.initial_mass << std::endl;
+        }
+        *out << " Total energy change: " << (ie + ke) - globals.initial_energy << std::endl;
+        if (globals.initial_energy > 0.0 && std::isfinite(globals.initial_energy)) {
+          *out << " Relative total energy change: " << ((ie + ke) - globals.initial_energy) / globals.initial_energy << std::endl;
+        }
+      }
       if (globals.config.test_problem != 0) {
         double qa_diff{};
         if (globals.config.test_problem == 1) {
@@ -114,7 +148,7 @@ void clover_report_step(global_variables &globals, parallel_ &parallel, //
       }
     }
     // Propagate the reference-check result so every MPI rank returns failure.
-    int test_fail = globals.report_test_fail ? 1 : 0;
+    int test_fail = (globals.report_test_fail || globals.report_invariant_fail) ? 1 : 0;
     clover_check_error(test_fail);
     globals.report_test_fail = test_fail != 0;
   }

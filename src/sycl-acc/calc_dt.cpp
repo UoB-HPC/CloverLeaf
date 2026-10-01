@@ -225,7 +225,7 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
     auto xvel0_acc = xvel0.access();
     auto yvel0_acc = yvel0.access();
 
-    std::cout << "Timestep information:" << std::endl
+    std::cerr << "Timestep information:" << std::endl
               << "j, k                 : " << jldt << " " << kldt << std::endl
               << "x, y                 : " << cellx_acc[jldt] << " " << celly_acc[kldt] << std::endl
               << "timestep : " << dt_min_val << std::endl

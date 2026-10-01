@@ -34,7 +34,7 @@ struct field_summary_functor {
 
   // Structure of variables to reduce
   typedef struct {
-    double vol, mass, ie, ke, press;
+    double vol, mass, ie, ke, press, invalid;
   } value_type;
 
   // Functor data member (kernel arguments)
@@ -76,11 +76,17 @@ struct field_summary_functor {
     }
     double cell_vol = volume(j, k);
     double cell_mass = cell_vol * density0(j, k);
+    const bool valid = cell_vol > 0.0 && cell_vol <= DBL_MAX &&
+                       density0(j, k) > 0.0 && density0(j, k) <= DBL_MAX &&
+                       energy0(j, k) >= 0.0 && energy0(j, k) <= DBL_MAX &&
+                       pressure(j, k) >= 0.0 && pressure(j, k) <= DBL_MAX &&
+                       vsqrd >= 0.0 && vsqrd <= DBL_MAX;
     update.vol += cell_vol;
     update.mass += cell_mass;
     update.ie += cell_mass * energy0(j, k);
     update.ke += cell_mass * 0.5 * vsqrd;
     update.press += cell_vol * pressure(j, k);
+    update.invalid += valid ? 0.0 : 1.0;
 
     //
     // END  OF THE KERNEL
@@ -95,6 +101,7 @@ struct field_summary_functor {
     update.ie += input.ie;
     update.ke += input.ke;
     update.press += input.press;
+    update.invalid += input.invalid;
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -104,6 +111,7 @@ struct field_summary_functor {
     update.ie += input.ie;
     update.ke += input.ke;
     update.press += input.press;
+    update.invalid += input.invalid;
   }
 
   // Initial values
@@ -114,6 +122,7 @@ struct field_summary_functor {
     update.ie = 0.0;
     update.ke = 0.0;
     update.press = 0.0;
+    update.invalid = 0.0;
   }
 };
 
@@ -147,6 +156,7 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
   double ie = 0.0;
   double ke = 0.0;
   double press = 0.0;
+  double invalid = 0.0;
 
   for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {
     field_summary_functor functor(globals.chunk.tiles[tile].info.t_xmin, globals.chunk.tiles[tile].info.t_xmax,
@@ -163,11 +173,12 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
                                 (globals.chunk.tiles[tile].info.t_xmax - globals.chunk.tiles[tile].info.t_xmin + 1),
                             functor, result);
 
-    vol = result.vol;
-    mass = result.mass;
-    ie = result.ie;
-    ke = result.ke;
-    press = result.press;
+    vol += result.vol;
+    mass += result.mass;
+    ie += result.ie;
+    ke += result.ke;
+    press += result.press;
+    invalid += result.invalid;
   }
 
   clover_sum(vol);
@@ -175,8 +186,9 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
   clover_sum(ie);
   clover_sum(ke);
   clover_sum(press);
+  clover_sum(invalid);
 
   if (globals.profiler_on) globals.profiler.summary += timer() - kernel_time;
 
-  clover_report_step(globals, parallel, vol, mass, ie, ke, mass);
+  clover_report_step(globals, parallel, vol, mass, ie, ke, press, invalid);
 }

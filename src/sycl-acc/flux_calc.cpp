@@ -50,8 +50,8 @@ void flux_calc(global_variables &globals) {
   double kernel_time = 0;
   if (globals.profiler_on) kernel_time = timer();
 
-  clover::execute(globals.context.queue, [&](handler &h) {
-    for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {
+  for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {
+    clover::execute(globals.context.queue, [&](handler &h) {
 
       tile_type &t = globals.chunk.tiles[tile];
       flux_calc_kernel(h, t.info.t_xmin, t.info.t_xmax, t.info.t_ymin, t.info.t_ymax, globals.dt,
@@ -64,8 +64,8 @@ void flux_calc(global_variables &globals) {
                        t.field.vol_flux_x.access<W>(h), //
                        t.field.vol_flux_y.access<W>(h)  //
       );
-    }
-  });
+    });
+  }
 
   if (globals.profiler_on) globals.profiler.flux += timer() - kernel_time;
 }

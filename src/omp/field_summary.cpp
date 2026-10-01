@@ -62,6 +62,7 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
   double ie = 0.0;
   double ke = 0.0;
   double press = 0.0;
+  double invalid = 0.0;
 
   for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {
     tile_type &t = globals.chunk.tiles[tile];
@@ -72,7 +73,7 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
     int xmin = t.info.t_xmin;
     field_type &field = t.field;
 
-#pragma omp parallel for simd reduction(+ : press) reduction(+ : ke) reduction(+ : ie) reduction(+ : mass) reduction(+ : vol)
+#pragma omp parallel for simd reduction(+ : invalid) reduction(+ : press) reduction(+ : ke) reduction(+ : ie) reduction(+ : mass) reduction(+ : vol)
     for (int idx = (0); idx < ((ymax - ymin + 1) * (xmax - xmin + 1)); idx++) {
       const int j = xmin + 1 + idx % (xmax - xmin + 1);
       const int k = ymin + 1 + idx / (xmax - xmin + 1);
@@ -84,11 +85,17 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
       }
       double cell_vol = field.volume(j, k);
       double cell_mass = cell_vol * field.density0(j, k);
+      const bool valid = cell_vol > 0.0 && cell_vol <= DBL_MAX &&
+                         field.density0(j, k) > 0.0 && field.density0(j, k) <= DBL_MAX &&
+                         field.energy0(j, k) >= 0.0 && field.energy0(j, k) <= DBL_MAX &&
+                         field.pressure(j, k) >= 0.0 && field.pressure(j, k) <= DBL_MAX &&
+                         vsqrd >= 0.0 && vsqrd <= DBL_MAX;
       vol += cell_vol;
       mass += cell_mass;
       ie += cell_mass * field.energy0(j, k);
       ke += cell_mass * 0.5 * vsqrd;
       press += cell_vol * field.pressure(j, k);
+      invalid += valid ? 0.0 : 1.0;
     }
   }
 
@@ -97,8 +104,9 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
   clover_sum(ie);
   clover_sum(ke);
   clover_sum(press);
+  clover_sum(invalid);
 
   if (globals.profiler_on) globals.profiler.summary += timer() - kernel_time;
 
-  clover_report_step(globals, parallel, vol, mass, ie, ke, press);
+  clover_report_step(globals, parallel, vol, mass, ie, ke, press, invalid);
 }

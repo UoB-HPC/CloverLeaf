@@ -46,6 +46,7 @@ int maxloc(const std::vector<double> &totals, const int len) {
 void hydro(global_variables &globals, parallel_ &parallel) {
 
   double timerstart = timer();
+  double first_step = 0, second_step = 0;
 
   if (!globals.config.dumpDir.empty())
     clover::dump(globals, std::to_string(parallel.task) + "_" + std::to_string(globals.step) + "_05_hydro.txt");
@@ -101,7 +102,6 @@ void hydro(global_variables &globals, parallel_ &parallel) {
     // On the short test runs, this can skew the results, so should be taken into account
     //  in recorded run times.
     double wall_clock{};
-    double first_step = 0, second_step = 0;
     if (globals.step == 1) first_step = timer() - step_time;
     if (globals.step == 2) second_step = timer() - step_time;
 

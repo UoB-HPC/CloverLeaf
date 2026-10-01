@@ -55,7 +55,7 @@ model create_context(bool silent, const std::vector<std::string> &args) {
 }
 
 void report_context(const clover::context &ctx) {
-  std::cout << " - Device: #" << acc_get_device_num(acc_device_default) << ")"
+  std::cout << " - Device: " << acc_get_device_num(acc_device_default) << "\n"
             << " - Target: " << (ctx.use_target ? "true" : "false") << std::endl;
 
   std::cout << " - CUDA managed memory: "

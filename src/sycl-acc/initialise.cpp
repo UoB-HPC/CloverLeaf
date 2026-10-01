@@ -40,7 +40,7 @@ model create_context(bool silent, const std::vector<std::string> &args) {
       try {
         std::rethrow_exception(e);
       } catch (sycl::exception const &e) {
-        std::cout << "[SYCL] Async exception:\n" << e.what() << std::endl;
+        std::cerr << "[SYCL] Async exception:\n" << e.what() << std::endl;
       }
     }
   };
@@ -72,9 +72,9 @@ void report_context(const clover::context &ctx) {
 #else
   #error "Unsupported RANGE2D_MODE"
 #endif
-  std::cout << " - SYCL device: " << ctx.queue.get_device().get_info<sycl::info::device::name>() << "\n"
-            << "   - Type    : " << deviceName(ctx.queue.get_device().get_info<sycl::info::device::device_type>()) << "\n"
-            << "   - Version : " << ctx.queue.get_device().get_info<sycl::info::device::version>() << "\n"
-            << "   - Vendor  : " << ctx.queue.get_device().get_info<sycl::info::device::vendor>() << "\n"
-            << "   - Driver  : " << ctx.queue.get_device().get_info<sycl::info::device::driver_version>() << std::endl;
+  std::cout << " - SYCL device: " << yaml_quote(ctx.queue.get_device().get_info<sycl::info::device::name>()) << "\n"
+            << " - Type    : " << deviceName(ctx.queue.get_device().get_info<sycl::info::device::device_type>()) << "\n"
+            << " - Version : " << yaml_quote(ctx.queue.get_device().get_info<sycl::info::device::version>()) << "\n"
+            << " - Vendor  : " << yaml_quote(ctx.queue.get_device().get_info<sycl::info::device::vendor>()) << "\n"
+            << " - Driver  : " << yaml_quote(ctx.queue.get_device().get_info<sycl::info::device::driver_version>()) << std::endl;
 }

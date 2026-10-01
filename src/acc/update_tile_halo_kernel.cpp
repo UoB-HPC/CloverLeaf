@@ -329,7 +329,7 @@ void update_tile_halo_r_kernel(global_variables &globals, int x_min, int x_max, 
     present(density0[ : density0_buffer.N()], right_density0[ : right_density0_buffer.N()])
     for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
       for (int j = 0; j < depth; ++j) {
-        density0[(x_min - j) + (k)*density0_sizex] = right_density0[(right_xmax + 1 - j) + (k)*right_density0_sizex];
+        density0[(x_max + 2 + j) + (k)*density0_sizex] = right_density0[(right_xmin - 1 + 2 + j) + (k)*right_density0_sizex];
       }
     }
   }
@@ -346,7 +346,7 @@ void update_tile_halo_r_kernel(global_variables &globals, int x_min, int x_max, 
     present(density1[ : density1_buffer.N()], right_density1[ : right_density1_buffer.N()])
     for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
       for (int j = 0; j < depth; ++j) {
-        density1[(x_min - j) + (k)*density1_sizex] = right_density1[(right_xmax + 1 - j) + (k)*right_density1_sizex];
+        density1[(x_max + 2 + j) + (k)*density1_sizex] = right_density1[(right_xmin - 1 + 2 + j) + (k)*right_density1_sizex];
       }
     }
   }
@@ -363,7 +363,7 @@ void update_tile_halo_r_kernel(global_variables &globals, int x_min, int x_max, 
     present(energy0[ : energy0_buffer.N()], right_energy0[ : right_energy0_buffer.N()])
     for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
       for (int j = 0; j < depth; ++j) {
-        energy0[(x_min - j) + (k)*energy0_sizex] = right_energy0[(right_xmax + 1 - j) + (k)*right_energy0_sizex];
+        energy0[(x_max + 2 + j) + (k)*energy0_sizex] = right_energy0[(right_xmin - 1 + 2 + j) + (k)*right_energy0_sizex];
       }
     }
   }
@@ -380,7 +380,7 @@ void update_tile_halo_r_kernel(global_variables &globals, int x_min, int x_max, 
     present(energy1[ : energy1_buffer.N()], right_energy1[ : right_energy1_buffer.N()])
     for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
       for (int j = 0; j < depth; ++j) {
-        energy1[(x_min - j) + (k)*energy1_sizex] = right_energy1[(right_xmax + 1 - j) + (k)*right_energy1_sizex];
+        energy1[(x_max + 2 + j) + (k)*energy1_sizex] = right_energy1[(right_xmin - 1 + 2 + j) + (k)*right_energy1_sizex];
       }
     }
   }
@@ -397,7 +397,7 @@ void update_tile_halo_r_kernel(global_variables &globals, int x_min, int x_max, 
     present(pressure[ : pressure_buffer.N()], right_pressure[ : right_pressure_buffer.N()])
     for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
       for (int j = 0; j < depth; ++j) {
-        pressure[(x_min - j) + (k)*pressure_sizex] = right_pressure[(right_xmax + 1 - j) + (k)*right_pressure_sizex];
+        pressure[(x_max + 2 + j) + (k)*pressure_sizex] = right_pressure[(right_xmin - 1 + 2 + j) + (k)*right_pressure_sizex];
       }
     }
   }
@@ -414,7 +414,7 @@ void update_tile_halo_r_kernel(global_variables &globals, int x_min, int x_max, 
     present(viscosity[ : viscosity_buffer.N()], right_viscosity[ : right_viscosity_buffer.N()])
     for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
       for (int j = 0; j < depth; ++j) {
-        viscosity[(x_min - j) + (k)*viscosity_sizex] = right_viscosity[(right_xmax + 1 - j) + (k)*right_viscosity_sizex];
+        viscosity[(x_max + 2 + j) + (k)*viscosity_sizex] = right_viscosity[(right_xmin - 1 + 2 + j) + (k)*right_viscosity_sizex];
       }
     }
   }
@@ -431,7 +431,7 @@ void update_tile_halo_r_kernel(global_variables &globals, int x_min, int x_max, 
     present(soundspeed[ : soundspeed_buffer.N()], right_soundspeed[ : right_soundspeed_buffer.N()])
     for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
       for (int j = 0; j < depth; ++j) {
-        soundspeed[(x_min - j) + (k)*soundspeed_sizex] = right_soundspeed[(right_xmax + 1 - j) + (k)*right_soundspeed_sizex];
+        soundspeed[(x_max + 2 + j) + (k)*soundspeed_sizex] = right_soundspeed[(right_xmin - 1 + 2 + j) + (k)*right_soundspeed_sizex];
       }
     }
   }
@@ -448,7 +448,7 @@ void update_tile_halo_r_kernel(global_variables &globals, int x_min, int x_max, 
     present(xvel0[ : xvel0_buffer.N()], right_xvel0[ : right_xvel0_buffer.N()])
     for (int k = (y_min - depth + 1); k < (y_max + 1 + depth + 2); k++) {
       for (int j = 0; j < depth; ++j) {
-        xvel0[(x_min - j) + (k)*xvel0_sizex] = right_xvel0[(right_xmax + 1 - j) + (k)*right_xvel0_sizex];
+        xvel0[(x_max + 1 + 2 + j) + (k)*xvel0_sizex] = right_xvel0[(right_xmin + 1 - 1 + 2 + j) + (k)*right_xvel0_sizex];
       }
     }
   }
@@ -465,7 +465,7 @@ void update_tile_halo_r_kernel(global_variables &globals, int x_min, int x_max, 
     present(xvel1[ : xvel1_buffer.N()], right_xvel1[ : right_xvel1_buffer.N()])
     for (int k = (y_min - depth + 1); k < (y_max + 1 + depth + 2); k++) {
       for (int j = 0; j < depth; ++j) {
-        xvel1[(x_min - j) + (k)*xvel1_sizex] = right_xvel1[(right_xmax + 1 - j) + (k)*right_xvel1_sizex];
+        xvel1[(x_max + 1 + 2 + j) + (k)*xvel1_sizex] = right_xvel1[(right_xmin + 1 - 1 + 2 + j) + (k)*right_xvel1_sizex];
       }
     }
   }
@@ -482,7 +482,7 @@ void update_tile_halo_r_kernel(global_variables &globals, int x_min, int x_max, 
     present(yvel0[ : yvel0_buffer.N()], right_yvel0[ : right_yvel0_buffer.N()])
     for (int k = (y_min - depth + 1); k < (y_max + 1 + depth + 2); k++) {
       for (int j = 0; j < depth; ++j) {
-        yvel0[(x_min - j) + (k)*yvel0_sizex] = right_yvel0[(right_xmax + 1 - j) + (k)*right_yvel0_sizex];
+        yvel0[(x_max + 1 + 2 + j) + (k)*yvel0_sizex] = right_yvel0[(right_xmin + 1 - 1 + 2 + j) + (k)*right_yvel0_sizex];
       }
     }
   }
@@ -499,7 +499,7 @@ void update_tile_halo_r_kernel(global_variables &globals, int x_min, int x_max, 
     present(yvel1[ : yvel1_buffer.N()], right_yvel1[ : right_yvel1_buffer.N()])
     for (int k = (y_min - depth + 1); k < (y_max + 1 + depth + 2); k++) {
       for (int j = 0; j < depth; ++j) {
-        yvel1[(x_min - j) + (k)*yvel1_sizex] = right_yvel1[(right_xmax + 1 - j) + (k)*right_yvel1_sizex];
+        yvel1[(x_max + 1 + 2 + j) + (k)*yvel1_sizex] = right_yvel1[(right_xmin + 1 - 1 + 2 + j) + (k)*right_yvel1_sizex];
       }
     }
   }
@@ -516,7 +516,7 @@ void update_tile_halo_r_kernel(global_variables &globals, int x_min, int x_max, 
     present(vol_flux_x[ : vol_flux_x_buffer.N()], right_vol_flux_x[ : right_vol_flux_x_buffer.N()])
     for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
       for (int j = 0; j < depth; ++j) {
-        vol_flux_x[(x_min - j) + (k)*vol_flux_x_sizex] = right_vol_flux_x[(right_xmax + 1 - j) + (k)*right_vol_flux_x_sizex];
+        vol_flux_x[(x_max + 1 + 2 + j) + (k)*vol_flux_x_sizex] = right_vol_flux_x[(right_xmin + 1 - 1 + 2 + j) + (k)*right_vol_flux_x_sizex];
       }
     }
   }
@@ -533,7 +533,7 @@ void update_tile_halo_r_kernel(global_variables &globals, int x_min, int x_max, 
     present(mass_flux_x[ : mass_flux_x_buffer.N()], right_mass_flux_x[ : right_mass_flux_x_buffer.N()])
     for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
       for (int j = 0; j < depth; ++j) {
-        mass_flux_x[(x_min - j) + (k)*mass_flux_x_sizex] = right_mass_flux_x[(right_xmax + 1 - j) + (k)*right_mass_flux_x_sizex];
+        mass_flux_x[(x_max + 1 + 2 + j) + (k)*mass_flux_x_sizex] = right_mass_flux_x[(right_xmin + 1 - 1 + 2 + j) + (k)*right_mass_flux_x_sizex];
       }
     }
   }
@@ -550,7 +550,7 @@ void update_tile_halo_r_kernel(global_variables &globals, int x_min, int x_max, 
     present(vol_flux_y[ : vol_flux_y_buffer.N()], right_vol_flux_y[ : right_vol_flux_y_buffer.N()])
     for (int k = (y_min - depth + 1); k < (y_max + 1 + depth + 2); k++) {
       for (int j = 0; j < depth; ++j) {
-        vol_flux_y[(x_min - j) + (k)*vol_flux_y_sizex] = right_vol_flux_y[(right_xmax + 1 - j) + (k)*right_vol_flux_y_sizex];
+        vol_flux_y[(x_max + 2 + j) + (k)*vol_flux_y_sizex] = right_vol_flux_y[(right_xmin - 1 + 2 + j) + (k)*right_vol_flux_y_sizex];
       }
     }
   }
@@ -567,7 +567,7 @@ void update_tile_halo_r_kernel(global_variables &globals, int x_min, int x_max, 
     present(mass_flux_y[ : mass_flux_y_buffer.N()], right_mass_flux_y[ : right_mass_flux_y_buffer.N()])
     for (int k = (y_min - depth + 1); k < (y_max + 1 + depth + 2); k++) {
       for (int j = 0; j < depth; ++j) {
-        mass_flux_y[(x_min - j) + (k)*mass_flux_y_sizex] = right_mass_flux_y[(right_xmax + 1 - j) + (k)*right_mass_flux_y_sizex];
+        mass_flux_y[(x_max + 2 + j) + (k)*mass_flux_y_sizex] = right_mass_flux_y[(right_xmin - 1 + 2 + j) + (k)*right_mass_flux_y_sizex];
       }
     }
   }
@@ -593,255 +593,225 @@ void update_tile_halo_t_kernel(
     clover::Buffer2D<double> &top_mass_flux_y_buffer, const int fields[NUM_FIELDS], int depth) {
   // Density 0
   if (fields[field_density0] == 1) {
-    // DO k=y_min-depth,y_max+depth
-
     double *density0 = density0_buffer.data;
     size_t density0_sizex = density0_buffer.nX();
     double *top_density0 = top_density0_buffer.data;
     size_t top_density0_sizex = top_density0_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(density0[ : density0_buffer.N()], top_density0[ : top_density0_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        density0[(x_min - j) + (k)*density0_sizex] = top_density0[(top_xmax + 1 - j) + (k)*top_density0_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        density0[j + (y_max + 2 + k) * density0_sizex] = top_density0[j + (top_ymin - 1 + 2 + k) * top_density0_sizex];
       }
     }
   }
 
   // Density 1
   if (fields[field_density1] == 1) {
-    // DO k=y_min-depth,y_max+depth
-
     double *density1 = density1_buffer.data;
     size_t density1_sizex = density1_buffer.nX();
     double *top_density1 = top_density1_buffer.data;
     size_t top_density1_sizex = top_density1_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(density1[ : density1_buffer.N()], top_density1[ : top_density1_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        density1[(x_min - j) + (k)*density1_sizex] = top_density1[(top_xmax + 1 - j) + (k)*top_density1_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        density1[j + (y_max + 2 + k) * density1_sizex] = top_density1[j + (top_ymin - 1 + 2 + k) * top_density1_sizex];
       }
     }
   }
 
   // Energy 0
   if (fields[field_energy0] == 1) {
-    // DO k=y_min-depth,y_max+depth
-
     double *energy0 = energy0_buffer.data;
     size_t energy0_sizex = energy0_buffer.nX();
     double *top_energy0 = top_energy0_buffer.data;
     size_t top_energy0_sizex = top_energy0_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(energy0[ : energy0_buffer.N()], top_energy0[ : top_energy0_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        energy0[(x_min - j) + (k)*energy0_sizex] = top_energy0[(top_xmax + 1 - j) + (k)*top_energy0_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        energy0[j + (y_max + 2 + k) * energy0_sizex] = top_energy0[j + (top_ymin - 1 + 2 + k) * top_energy0_sizex];
       }
     }
   }
 
   // Energy 1
   if (fields[field_energy1] == 1) {
-    // DO k=y_min-depth,y_max+depth
-
     double *energy1 = energy1_buffer.data;
     size_t energy1_sizex = energy1_buffer.nX();
     double *top_energy1 = top_energy1_buffer.data;
     size_t top_energy1_sizex = top_energy1_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(energy1[ : energy1_buffer.N()], top_energy1[ : top_energy1_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        energy1[(x_min - j) + (k)*energy1_sizex] = top_energy1[(top_xmax + 1 - j) + (k)*top_energy1_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        energy1[j + (y_max + 2 + k) * energy1_sizex] = top_energy1[j + (top_ymin - 1 + 2 + k) * top_energy1_sizex];
       }
     }
   }
 
   // Pressure
   if (fields[field_pressure] == 1) {
-    // DO k=y_min-depth,y_max+depth
-
     double *pressure = pressure_buffer.data;
     size_t pressure_sizex = pressure_buffer.nX();
     double *top_pressure = top_pressure_buffer.data;
     size_t top_pressure_sizex = top_pressure_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(pressure[ : pressure_buffer.N()], top_pressure[ : top_pressure_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        pressure[(x_min - j) + (k)*pressure_sizex] = top_pressure[(top_xmax + 1 - j) + (k)*top_pressure_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        pressure[j + (y_max + 2 + k) * pressure_sizex] = top_pressure[j + (top_ymin - 1 + 2 + k) * top_pressure_sizex];
       }
     }
   }
 
   // Viscosity
   if (fields[field_viscosity] == 1) {
-    // DO k=y_min-depth,y_max+depth
-
     double *viscosity = viscosity_buffer.data;
     size_t viscosity_sizex = viscosity_buffer.nX();
     double *top_viscosity = top_viscosity_buffer.data;
     size_t top_viscosity_sizex = top_viscosity_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(viscosity[ : viscosity_buffer.N()], top_viscosity[ : top_viscosity_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        viscosity[(x_min - j) + (k)*viscosity_sizex] = top_viscosity[(top_xmax + 1 - j) + (k)*top_viscosity_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        viscosity[j + (y_max + 2 + k) * viscosity_sizex] = top_viscosity[j + (top_ymin - 1 + 2 + k) * top_viscosity_sizex];
       }
     }
   }
 
   // Soundspeed
   if (fields[field_soundspeed] == 1) {
-    // DO k=y_min-depth,y_max+depth
-
     double *soundspeed = soundspeed_buffer.data;
     size_t soundspeed_sizex = soundspeed_buffer.nX();
     double *top_soundspeed = top_soundspeed_buffer.data;
     size_t top_soundspeed_sizex = top_soundspeed_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(soundspeed[ : soundspeed_buffer.N()], top_soundspeed[ : top_soundspeed_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        soundspeed[(x_min - j) + (k)*soundspeed_sizex] = top_soundspeed[(top_xmax + 1 - j) + (k)*top_soundspeed_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        soundspeed[j + (y_max + 2 + k) * soundspeed_sizex] = top_soundspeed[j + (top_ymin - 1 + 2 + k) * top_soundspeed_sizex];
       }
     }
   }
 
   // XVEL 0
   if (fields[field_xvel0] == 1) {
-    // DO k=y_min-depth,y_max+1+depth
-
     double *xvel0 = xvel0_buffer.data;
     size_t xvel0_sizex = xvel0_buffer.nX();
     double *top_xvel0 = top_xvel0_buffer.data;
     size_t top_xvel0_sizex = top_xvel0_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(xvel0[ : xvel0_buffer.N()], top_xvel0[ : top_xvel0_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + 1 + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        xvel0[(x_min - j) + (k)*xvel0_sizex] = top_xvel0[(top_xmax + 1 - j) + (k)*top_xvel0_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + 1 + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        xvel0[j + (y_max + 1 + 2 + k) * xvel0_sizex] = top_xvel0[j + (top_ymin + 1 - 1 + 2 + k) * top_xvel0_sizex];
       }
     }
   }
 
   // XVEL 1
   if (fields[field_xvel1] == 1) {
-    // DO k=y_min-depth,y_max+1+depth
-
     double *xvel1 = xvel1_buffer.data;
     size_t xvel1_sizex = xvel1_buffer.nX();
     double *top_xvel1 = top_xvel1_buffer.data;
     size_t top_xvel1_sizex = top_xvel1_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(xvel1[ : xvel1_buffer.N()], top_xvel1[ : top_xvel1_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + 1 + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        xvel1[(x_min - j) + (k)*xvel1_sizex] = top_xvel1[(top_xmax + 1 - j) + (k)*top_xvel1_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + 1 + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        xvel1[j + (y_max + 1 + 2 + k) * xvel1_sizex] = top_xvel1[j + (top_ymin + 1 - 1 + 2 + k) * top_xvel1_sizex];
       }
     }
   }
 
   // YVEL 0
   if (fields[field_yvel0] == 1) {
-    // DO k=y_min-depth,y_max+1+depth
-
     double *yvel0 = yvel0_buffer.data;
     size_t yvel0_sizex = yvel0_buffer.nX();
     double *top_yvel0 = top_yvel0_buffer.data;
     size_t top_yvel0_sizex = top_yvel0_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(yvel0[ : yvel0_buffer.N()], top_yvel0[ : top_yvel0_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + 1 + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        yvel0[(x_min - j) + (k)*yvel0_sizex] = top_yvel0[(top_xmax + 1 - j) + (k)*top_yvel0_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + 1 + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        yvel0[j + (y_max + 1 + 2 + k) * yvel0_sizex] = top_yvel0[j + (top_ymin + 1 - 1 + 2 + k) * top_yvel0_sizex];
       }
     }
   }
 
   // YVEL 1
   if (fields[field_yvel1] == 1) {
-    // DO k=y_min-depth,y_max+1+depth
-
     double *yvel1 = yvel1_buffer.data;
     size_t yvel1_sizex = yvel1_buffer.nX();
     double *top_yvel1 = top_yvel1_buffer.data;
     size_t top_yvel1_sizex = top_yvel1_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(yvel1[ : yvel1_buffer.N()], top_yvel1[ : top_yvel1_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + 1 + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        yvel1[(x_min - j) + (k)*yvel1_sizex] = top_yvel1[(top_xmax + 1 - j) + (k)*top_yvel1_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + 1 + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        yvel1[j + (y_max + 1 + 2 + k) * yvel1_sizex] = top_yvel1[j + (top_ymin + 1 - 1 + 2 + k) * top_yvel1_sizex];
       }
     }
   }
 
   // VOL_FLUX_X
   if (fields[field_vol_flux_x] == 1) {
-    // DO k=y_min-depth,y_max+depth
-
     double *vol_flux_x = vol_flux_x_buffer.data;
     size_t vol_flux_x_sizex = vol_flux_x_buffer.nX();
     double *top_vol_flux_x = top_vol_flux_x_buffer.data;
     size_t top_vol_flux_x_sizex = top_vol_flux_x_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(vol_flux_x[ : vol_flux_x_buffer.N()], top_vol_flux_x[ : top_vol_flux_x_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        vol_flux_x[(x_min - j) + (k)*vol_flux_x_sizex] = top_vol_flux_x[(top_xmax + 1 - j) + (k)*top_vol_flux_x_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + 1 + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        vol_flux_x[j + (y_max + 2 + k) * vol_flux_x_sizex] = top_vol_flux_x[j + (top_ymin - 1 + 2 + k) * top_vol_flux_x_sizex];
       }
     }
   }
 
   // MASS_FLUX_X
   if (fields[field_mass_flux_x] == 1) {
-    // DO k=y_min-depth,y_max+depth
-
     double *mass_flux_x = mass_flux_x_buffer.data;
     size_t mass_flux_x_sizex = mass_flux_x_buffer.nX();
     double *top_mass_flux_x = top_mass_flux_x_buffer.data;
     size_t top_mass_flux_x_sizex = top_mass_flux_x_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(mass_flux_x[ : mass_flux_x_buffer.N()], top_mass_flux_x[ : top_mass_flux_x_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        mass_flux_x[(x_min - j) + (k)*mass_flux_x_sizex] = top_mass_flux_x[(top_xmax + 1 - j) + (k)*top_mass_flux_x_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + 1 + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        mass_flux_x[j + (y_max + 2 + k) * mass_flux_x_sizex] = top_mass_flux_x[j + (top_ymin - 1 + 2 + k) * top_mass_flux_x_sizex];
       }
     }
   }
 
   // VOL_FLUX_Y
   if (fields[field_vol_flux_y] == 1) {
-    // DO k=y_min-depth,y_max+1+depth
-
     double *vol_flux_y = vol_flux_y_buffer.data;
     size_t vol_flux_y_sizex = vol_flux_y_buffer.nX();
     double *top_vol_flux_y = top_vol_flux_y_buffer.data;
     size_t top_vol_flux_y_sizex = top_vol_flux_y_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(vol_flux_y[ : vol_flux_y_buffer.N()], top_vol_flux_y[ : top_vol_flux_y_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + 1 + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        vol_flux_y[(x_min - j) + (k)*vol_flux_y_sizex] = top_vol_flux_y[(top_xmax + 1 - j) + (k)*top_vol_flux_y_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        vol_flux_y[j + (y_max + 1 + 2 + k) * vol_flux_y_sizex] = top_vol_flux_y[j + (top_ymin + 1 - 1 + 2 + k) * top_vol_flux_y_sizex];
       }
     }
   }
 
   // MASS_FLUX_Y
   if (fields[field_mass_flux_y] == 1) {
-    // DO k=y_min-depth,y_max+1+depth
-
     double *mass_flux_y = mass_flux_y_buffer.data;
     size_t mass_flux_y_sizex = mass_flux_y_buffer.nX();
     double *top_mass_flux_y = top_mass_flux_y_buffer.data;
     size_t top_mass_flux_y_sizex = top_mass_flux_y_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(mass_flux_y[ : mass_flux_y_buffer.N()], top_mass_flux_y[ : top_mass_flux_y_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + 1 + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        mass_flux_y[(x_min - j) + (k)*mass_flux_y_sizex] = top_mass_flux_y[(top_xmax + 1 - j) + (k)*top_mass_flux_y_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        mass_flux_y[j + (y_max + 1 + 2 + k) * mass_flux_y_sizex] = top_mass_flux_y[j + (top_ymin + 1 - 1 + 2 + k) * top_mass_flux_y_sizex];
       }
     }
   }
@@ -864,255 +834,225 @@ void update_tile_halo_b_kernel(
     clover::Buffer2D<double> &bottom_mass_flux_y_buffer, const int fields[NUM_FIELDS], int depth) {
   // Density 0
   if (fields[field_density0] == 1) {
-    // DO k=y_min-depth,y_max+depth
-
     double *density0 = density0_buffer.data;
     size_t density0_sizex = density0_buffer.nX();
     double *bottom_density0 = bottom_density0_buffer.data;
     size_t bottom_density0_sizex = bottom_density0_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(density0[ : density0_buffer.N()], bottom_density0[ : bottom_density0_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        density0[(x_min - j) + (k)*density0_sizex] = bottom_density0[(bottom_xmax + 1 - j) + (k)*bottom_density0_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        density0[j + (y_min - k) * density0_sizex] = bottom_density0[j + (bottom_ymax + 1 - k) * bottom_density0_sizex];
       }
     }
   }
 
   // Density 1
   if (fields[field_density1] == 1) {
-    // DO k=y_min-depth,y_max+depth
-
     double *density1 = density1_buffer.data;
     size_t density1_sizex = density1_buffer.nX();
     double *bottom_density1 = bottom_density1_buffer.data;
     size_t bottom_density1_sizex = bottom_density1_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(density1[ : density1_buffer.N()], bottom_density1[ : bottom_density1_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        density1[(x_min - j) + (k)*density1_sizex] = bottom_density1[(bottom_xmax + 1 - j) + (k)*bottom_density1_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        density1[j + (y_min - k) * density1_sizex] = bottom_density1[j + (bottom_ymax + 1 - k) * bottom_density1_sizex];
       }
     }
   }
 
   // Energy 0
   if (fields[field_energy0] == 1) {
-    // DO k=y_min-depth,y_max+depth
-
     double *energy0 = energy0_buffer.data;
     size_t energy0_sizex = energy0_buffer.nX();
     double *bottom_energy0 = bottom_energy0_buffer.data;
     size_t bottom_energy0_sizex = bottom_energy0_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(energy0[ : energy0_buffer.N()], bottom_energy0[ : bottom_energy0_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        energy0[(x_min - j) + (k)*energy0_sizex] = bottom_energy0[(bottom_xmax + 1 - j) + (k)*bottom_energy0_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        energy0[j + (y_min - k) * energy0_sizex] = bottom_energy0[j + (bottom_ymax + 1 - k) * bottom_energy0_sizex];
       }
     }
   }
 
   // Energy 1
   if (fields[field_energy1] == 1) {
-    // DO k=y_min-depth,y_max+depth
-
     double *energy1 = energy1_buffer.data;
     size_t energy1_sizex = energy1_buffer.nX();
     double *bottom_energy1 = bottom_energy1_buffer.data;
     size_t bottom_energy1_sizex = bottom_energy1_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(energy1[ : energy1_buffer.N()], bottom_energy1[ : bottom_energy1_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        energy1[(x_min - j) + (k)*energy1_sizex] = bottom_energy1[(bottom_xmax + 1 - j) + (k)*bottom_energy1_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        energy1[j + (y_min - k) * energy1_sizex] = bottom_energy1[j + (bottom_ymax + 1 - k) * bottom_energy1_sizex];
       }
     }
   }
 
   // Pressure
   if (fields[field_pressure] == 1) {
-    // DO k=y_min-depth,y_max+depth
-
     double *pressure = pressure_buffer.data;
     size_t pressure_sizex = pressure_buffer.nX();
     double *bottom_pressure = bottom_pressure_buffer.data;
     size_t bottom_pressure_sizex = bottom_pressure_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(pressure[ : pressure_buffer.N()], bottom_pressure[ : bottom_pressure_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        pressure[(x_min - j) + (k)*pressure_sizex] = bottom_pressure[(bottom_xmax + 1 - j) + (k)*bottom_pressure_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        pressure[j + (y_min - k) * pressure_sizex] = bottom_pressure[j + (bottom_ymax + 1 - k) * bottom_pressure_sizex];
       }
     }
   }
 
   // Viscosity
   if (fields[field_viscosity] == 1) {
-    // DO k=y_min-depth,y_max+depth
-
     double *viscosity = viscosity_buffer.data;
     size_t viscosity_sizex = viscosity_buffer.nX();
     double *bottom_viscosity = bottom_viscosity_buffer.data;
     size_t bottom_viscosity_sizex = bottom_viscosity_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(viscosity[ : viscosity_buffer.N()], bottom_viscosity[ : bottom_viscosity_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        viscosity[(x_min - j) + (k)*viscosity_sizex] = bottom_viscosity[(bottom_xmax + 1 - j) + (k)*bottom_viscosity_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        viscosity[j + (y_min - k) * viscosity_sizex] = bottom_viscosity[j + (bottom_ymax + 1 - k) * bottom_viscosity_sizex];
       }
     }
   }
 
   // Soundspeed
   if (fields[field_soundspeed] == 1) {
-    // DO k=y_min-depth,y_max+depth
-
     double *soundspeed = soundspeed_buffer.data;
     size_t soundspeed_sizex = soundspeed_buffer.nX();
     double *bottom_soundspeed = bottom_soundspeed_buffer.data;
     size_t bottom_soundspeed_sizex = bottom_soundspeed_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(soundspeed[ : soundspeed_buffer.N()], bottom_soundspeed[ : bottom_soundspeed_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        soundspeed[(x_min - j) + (k)*soundspeed_sizex] = bottom_soundspeed[(bottom_xmax + 1 - j) + (k)*bottom_soundspeed_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        soundspeed[j + (y_min - k) * soundspeed_sizex] = bottom_soundspeed[j + (bottom_ymax + 1 - k) * bottom_soundspeed_sizex];
       }
     }
   }
 
   // XVEL 0
   if (fields[field_xvel0] == 1) {
-    // DO k=y_min-depth,y_max+1+depth
-
     double *xvel0 = xvel0_buffer.data;
     size_t xvel0_sizex = xvel0_buffer.nX();
     double *bottom_xvel0 = bottom_xvel0_buffer.data;
     size_t bottom_xvel0_sizex = bottom_xvel0_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(xvel0[ : xvel0_buffer.N()], bottom_xvel0[ : bottom_xvel0_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + 1 + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        xvel0[(x_min - j) + (k)*xvel0_sizex] = bottom_xvel0[(bottom_xmax + 1 - j) + (k)*bottom_xvel0_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + 1 + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        xvel0[j + (y_min - k) * xvel0_sizex] = bottom_xvel0[j + (bottom_ymax + 1 - k) * bottom_xvel0_sizex];
       }
     }
   }
 
   // XVEL 1
   if (fields[field_xvel1] == 1) {
-    // DO k=y_min-depth,y_max+1+depth
-
     double *xvel1 = xvel1_buffer.data;
     size_t xvel1_sizex = xvel1_buffer.nX();
     double *bottom_xvel1 = bottom_xvel1_buffer.data;
     size_t bottom_xvel1_sizex = bottom_xvel1_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(xvel1[ : xvel1_buffer.N()], bottom_xvel1[ : bottom_xvel1_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + 1 + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        xvel1[(x_min - j) + (k)*xvel1_sizex] = bottom_xvel1[(bottom_xmax + 1 - j) + (k)*bottom_xvel1_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + 1 + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        xvel1[j + (y_min - k) * xvel1_sizex] = bottom_xvel1[j + (bottom_ymax + 1 - k) * bottom_xvel1_sizex];
       }
     }
   }
 
   // YVEL 0
   if (fields[field_yvel0] == 1) {
-    // DO k=y_min-depth,y_max+1+depth
-
     double *yvel0 = yvel0_buffer.data;
     size_t yvel0_sizex = yvel0_buffer.nX();
     double *bottom_yvel0 = bottom_yvel0_buffer.data;
     size_t bottom_yvel0_sizex = bottom_yvel0_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(yvel0[ : yvel0_buffer.N()], bottom_yvel0[ : bottom_yvel0_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + 1 + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        yvel0[(x_min - j) + (k)*yvel0_sizex] = bottom_yvel0[(bottom_xmax + 1 - j) + (k)*bottom_yvel0_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + 1 + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        yvel0[j + (y_min - k) * yvel0_sizex] = bottom_yvel0[j + (bottom_ymax + 1 - k) * bottom_yvel0_sizex];
       }
     }
   }
 
   // YVEL 1
   if (fields[field_yvel1] == 1) {
-    // DO k=y_min-depth,y_max+1+depth
-
     double *yvel1 = yvel1_buffer.data;
     size_t yvel1_sizex = yvel1_buffer.nX();
     double *bottom_yvel1 = bottom_yvel1_buffer.data;
     size_t bottom_yvel1_sizex = bottom_yvel1_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(yvel1[ : yvel1_buffer.N()], bottom_yvel1[ : bottom_yvel1_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + 1 + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        yvel1[(x_min - j) + (k)*yvel1_sizex] = bottom_yvel1[(bottom_xmax + 1 - j) + (k)*bottom_yvel1_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + 1 + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        yvel1[j + (y_min - k) * yvel1_sizex] = bottom_yvel1[j + (bottom_ymax + 1 - k) * bottom_yvel1_sizex];
       }
     }
   }
 
   // VOL_FLUX_X
   if (fields[field_vol_flux_x] == 1) {
-    // DO k=y_min-depth,y_max+depth
-
     double *vol_flux_x = vol_flux_x_buffer.data;
     size_t vol_flux_x_sizex = vol_flux_x_buffer.nX();
     double *bottom_vol_flux_x = bottom_vol_flux_x_buffer.data;
     size_t bottom_vol_flux_x_sizex = bottom_vol_flux_x_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(vol_flux_x[ : vol_flux_x_buffer.N()], bottom_vol_flux_x[ : bottom_vol_flux_x_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        vol_flux_x[(x_min - j) + (k)*vol_flux_x_sizex] = bottom_vol_flux_x[(bottom_xmax + 1 - j) + (k)*bottom_vol_flux_x_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + 1 + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        vol_flux_x[j + (y_min - k) * vol_flux_x_sizex] = bottom_vol_flux_x[j + (bottom_ymax + 1 - k) * bottom_vol_flux_x_sizex];
       }
     }
   }
 
   // MASS_FLUX_X
   if (fields[field_mass_flux_x] == 1) {
-    // DO k=y_min-depth,y_max+depth
-
     double *mass_flux_x = mass_flux_x_buffer.data;
     size_t mass_flux_x_sizex = mass_flux_x_buffer.nX();
     double *bottom_mass_flux_x = bottom_mass_flux_x_buffer.data;
     size_t bottom_mass_flux_x_sizex = bottom_mass_flux_x_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(mass_flux_x[ : mass_flux_x_buffer.N()], bottom_mass_flux_x[ : bottom_mass_flux_x_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        mass_flux_x[(x_min - j) + (k)*mass_flux_x_sizex] = bottom_mass_flux_x[(bottom_xmax + 1 - j) + (k)*bottom_mass_flux_x_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + 1 + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        mass_flux_x[j + (y_min - k) * mass_flux_x_sizex] = bottom_mass_flux_x[j + (bottom_ymax + 1 - k) * bottom_mass_flux_x_sizex];
       }
     }
   }
 
   // VOL_FLUX_Y
   if (fields[field_vol_flux_y] == 1) {
-    // DO k=y_min-depth,y_max+1+depth
-
     double *vol_flux_y = vol_flux_y_buffer.data;
     size_t vol_flux_y_sizex = vol_flux_y_buffer.nX();
     double *bottom_vol_flux_y = bottom_vol_flux_y_buffer.data;
     size_t bottom_vol_flux_y_sizex = bottom_vol_flux_y_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(vol_flux_y[ : vol_flux_y_buffer.N()], bottom_vol_flux_y[ : bottom_vol_flux_y_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + 1 + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        vol_flux_y[(x_min - j) + (k)*vol_flux_y_sizex] = bottom_vol_flux_y[(bottom_xmax + 1 - j) + (k)*bottom_vol_flux_y_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        vol_flux_y[j + (y_min - k) * vol_flux_y_sizex] = bottom_vol_flux_y[j + (bottom_ymax + 1 - k) * bottom_vol_flux_y_sizex];
       }
     }
   }
 
   // MASS_FLUX_Y
   if (fields[field_mass_flux_y] == 1) {
-    // DO k=y_min-depth,y_max+1+depth
-
     double *mass_flux_y = mass_flux_y_buffer.data;
     size_t mass_flux_y_sizex = mass_flux_y_buffer.nX();
     double *bottom_mass_flux_y = bottom_mass_flux_y_buffer.data;
     size_t bottom_mass_flux_y_sizex = bottom_mass_flux_y_buffer.nX();
 #pragma acc parallel loop gang worker vector clover_use_target(globals.context.use_target) \
     present(mass_flux_y[ : mass_flux_y_buffer.N()], bottom_mass_flux_y[ : bottom_mass_flux_y_buffer.N()])
-    for (int k = (y_min - depth + 1); k < (y_max + 1 + depth + 2); k++) {
-      for (int j = 0; j < depth; ++j) {
-        mass_flux_y[(x_min - j) + (k)*mass_flux_y_sizex] = bottom_mass_flux_y[(bottom_xmax + 1 - j) + (k)*bottom_mass_flux_y_sizex];
+    for (int j = (x_min - depth + 1); j < (x_max + depth + 2); j++) {
+      for (int k = 0; k < depth; ++k) {
+        mass_flux_y[j + (y_min - k) * mass_flux_y_sizex] = bottom_mass_flux_y[j + (bottom_ymax + 1 - k) * bottom_mass_flux_y_sizex];
       }
     }
   }

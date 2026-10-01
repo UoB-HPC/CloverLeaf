@@ -32,6 +32,8 @@
 #include "update_halo.h"
 #include "viscosity.h"
 
+#include <cmath>
+
 extern std::ostream g_out;
 
 void timestep(global_variables &globals, parallel_ &parallel) {
@@ -74,8 +76,10 @@ void timestep(global_variables &globals, parallel_ &parallel) {
   double dtlp{};
   double x_pos{}, y_pos{}, xl_pos{}, yl_pos{};
   std::string dt_control, dtl_control;
+  bool invalid_dt = false;
   for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {
     calc_dt(globals, tile, dtlp, dtl_control, xl_pos, yl_pos, jldt, kldt);
+    invalid_dt = invalid_dt || !std::isfinite(dtlp) || dtlp <= 0.0;
 
     if (dtlp <= globals.dt) {
       globals.dt = dtlp;
@@ -90,8 +94,13 @@ void timestep(global_variables &globals, parallel_ &parallel) {
   globals.dt = std::min(std::min(globals.dt, globals.dtold * globals.config.dtrise), globals.config.dtmax);
 
   //	globals.queue.wait_and_throw();
+  if (invalid_dt || !std::isfinite(globals.dt)) globals.dt = 0.0;
   clover_min(globals.dt);
   if (globals.profiler_on) globals.profiler.timestep += timer() - kernel_time;
+  if (!std::isfinite(globals.dt) || globals.dt <= 0.0 || !std::isfinite(globals.time + globals.dt) ||
+      !(globals.time + globals.dt > globals.time)) {
+    report_error((char *)"timestep", (char *)"invalid timestep or time does not advance");
+  }
 
   if (globals.dt < globals.config.dtmin) small = 1;
 

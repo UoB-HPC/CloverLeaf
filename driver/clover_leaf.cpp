@@ -82,7 +82,8 @@ global_variables initialise(parallel_ &parallel, const std::vector<std::string> 
 
   if (!model.offload) {
     if (model.args.staging_buffer == run_args::staging_buffer::enabled) {
-      std::cout << "# WARNING: enabling staging buffer on a non-offload (host) model or device may be no-op" << std::endl;
+      if (parallel.boss)
+        std::cerr << "# WARNING: enabling staging buffer on a non-offload (host) model or device may be no-op" << std::endl;
     }
   }
   switch (model.args.staging_buffer) {
@@ -95,9 +96,9 @@ global_variables initialise(parallel_ &parallel, const std::vector<std::string> 
 
   if (parallel.boss) {
     std::cout << "CloverLeaf:\n"
-              << " - Ver.:     " << g_version << "\n"
-              << " - Deck:     " << model.args.inFile << "\n"
-              << " - Out:      " << model.args.outFile << "\n"
+              << " - Ver.:     " << yaml_quote(g_version) << "\n"
+              << " - Deck:     " << yaml_quote(model.args.inFile) << "\n"
+              << " - Out:      " << yaml_quote(model.args.outFile) << "\n"
               << " - Profiler: " << (model.args.profile ? (*model.args.profile ? "true" : "false") : "deck-specified") << "\n"
               << "MPI:\n"
               << " - Enabled:     " << (mpi_enabled ? "true" : "false") << "\n"
@@ -108,7 +109,7 @@ global_variables initialise(parallel_ &parallel, const std::vector<std::string> 
               << (mpi_cuda_aware_runtime ? (*mpi_cuda_aware_runtime ? "true" : "false") : "unknown") << "\n"
               << " - Host-Device halo exchange staging buffer:  " << (config.staging_buffer ? "true" : "false") << "\n"
               << "Model:\n"
-              << " - Name:      " << model.name << "\n"
+              << " - Name:      " << yaml_quote(model.name) << "\n"
               << " - Execution: " << (model.offload ? "Offload (device)" : "Host") //
               << std::endl;
     report_context(model.context);
@@ -122,7 +123,7 @@ global_variables initialise(parallel_ &parallel, const std::vector<std::string> 
     if (!of.is_open()) report_error((char *)"initialise", (char *)"Error opening clover.out file.");
     g_out.rdbuf(of.rdbuf());
   } else {
-    g_out.rdbuf(std::cout.rdbuf());
+    g_out.rdbuf(std::cerr.rdbuf());
   }
 
   if (parallel.boss) {
@@ -139,20 +140,20 @@ global_variables initialise(parallel_ &parallel, const std::vector<std::string> 
     if (!args.empty()) {
       std::cout << " Args:";
       for (const auto &arg : args)
-        std::cout << " " << arg;
+        std::cout << " " << yaml_quote(arg);
       std::cout << std::endl;
     }
   }
 
   if (!model.args.inFile.empty()) {
-    if (parallel.boss) std::cout << " Using input: `" << model.args.inFile << "`" << std::endl;
+    if (parallel.boss) std::cout << " Using input: " << yaml_quote(model.args.inFile) << std::endl;
     g_in.open(model.args.inFile);
     if (g_in.fail()) {
       std::cerr << "Unable to open file: `" << model.args.inFile << "`" << std::endl;
       std::exit(1);
     }
   } else {
-    if (parallel.boss) std::cout << "No input file specified, using default input" << std::endl;
+    if (parallel.boss) std::cout << " No input file specified, using default input" << std::endl;
     std::ofstream out_unit("clover.in");
     out_unit << "*clover" << std::endl
              << " state 1 density=0.2 energy=1.0" << std::endl
@@ -212,7 +213,9 @@ int main(int argc, char *argv[]) {
   if (parallel.boss) {
     std::cout << "Result:\n"
               << " - Problem: " << (config.config.test_problem == 0 ? "none" : std::to_string(config.config.test_problem)) << "\n"
-              << " - Outcome: " << (config.report_test_fail ? "FAILED" : (config.config.test_problem == 0 ? "SKIPPED" : "PASSED")) << std::endl;
+              << " - Invariants: " << (config.report_invariant_fail ? "FAILED" : "PASSED") << "\n"
+              << " - Outcome: "
+              << (config.report_test_fail ? "FAILED" : (config.config.test_problem == 0 ? "SKIPPED" : "PASSED")) << std::endl;
   }
   return config.report_test_fail ? EXIT_FAILURE : EXIT_SUCCESS;
 }

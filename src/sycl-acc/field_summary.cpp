@@ -42,10 +42,10 @@
 //  ieee options set on a single core crun.
 
 struct summary {
-  double vol = 0.0, mass = 0.0, ie = 0.0, ke = 0.0, press = 0.0;
+  double vol = 0.0, mass = 0.0, ie = 0.0, ke = 0.0, press = 0.0, invalid = 0.0;
   summary operator+(const summary &s) const {
     return {
-        vol + s.vol, mass + s.mass, ie + s.ie, ke + s.ke, press + s.press,
+        vol + s.vol, mass + s.mass, ie + s.ie, ke + s.ke, press + s.press, invalid + s.invalid,
     };
   }
 };
@@ -105,12 +105,18 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
                 }
                 double cell_vol = volume_[j][k];
                 double cell_mass = cell_vol * density0_[j][k];
+                const bool valid = cell_vol > 0.0 && cell_vol <= DBL_MAX &&
+                                   density0_[j][k] > 0.0 && density0_[j][k] <= DBL_MAX &&
+                                   energy0_[j][k] >= 0.0 && energy0_[j][k] <= DBL_MAX &&
+                                   pressure_[j][k] >= 0.0 && pressure_[j][k] <= DBL_MAX &&
+                                   vsqrd >= 0.0 && vsqrd <= DBL_MAX;
 
                 acc += summary{.vol = cell_vol,
                                .mass = cell_mass,
                                .ie = cell_mass * energy0_[j][k],
                                .ke = cell_mass * 0.5 * vsqrd,
-                               .press = cell_vol * pressure_[j][k]};
+                               .press = cell_vol * pressure_[j][k],
+                               .invalid = valid ? 0.0 : 1.0};
               });
         })
         .wait_and_throw();
@@ -148,12 +154,18 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
           }
           double cell_vol = ctx.actual.volume[j][k];
           double cell_mass = cell_vol * ctx.actual.density0[j][k];
+          const bool valid = cell_vol > 0.0 && cell_vol <= DBL_MAX &&
+                             ctx.actual.density0[j][k] > 0.0 && ctx.actual.density0[j][k] <= DBL_MAX &&
+                             ctx.actual.energy0[j][k] >= 0.0 && ctx.actual.energy0[j][k] <= DBL_MAX &&
+                             ctx.actual.pressure[j][k] >= 0.0 && ctx.actual.pressure[j][k] <= DBL_MAX &&
+                             vsqrd >= 0.0 && vsqrd <= DBL_MAX;
 
           ctx.local[lidx].vol += cell_vol;
           ctx.local[lidx].mass += cell_mass;
           ctx.local[lidx].ie += cell_mass * ctx.actual.energy0[j][k];
           ctx.local[lidx].ke += cell_mass * 0.5 * vsqrd;
           ctx.local[lidx].press += cell_vol * ctx.actual.pressure[j][k];
+          ctx.local[lidx].invalid += valid ? 0.0 : 1.0;
         },
         [](const Reducer &ctx, id<1> idx, id<1> idy) {
           ctx.local[idx].vol += ctx.local[idy].vol;
@@ -161,20 +173,22 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
           ctx.local[idx].ie += ctx.local[idy].ie;
           ctx.local[idx].ke += ctx.local[idy].ke;
           ctx.local[idx].press += ctx.local[idy].press;
+          ctx.local[idx].invalid += ctx.local[idy].invalid;
         },
         [](const Reducer &ctx, size_t group, id<1> idx) { ctx.result[group] = ctx.local[idx]; });
     total = total + result.access()[0];
 #endif
   }
   globals.context.queue.wait_and_throw();
-  auto [vol, mass, ie, ke, press] = total;
+  auto [vol, mass, ie, ke, press, invalid] = total;
 
   clover_sum(vol);
   clover_sum(mass);
   clover_sum(ie);
   clover_sum(ke);
   clover_sum(press);
+  clover_sum(invalid);
   if (globals.profiler_on) globals.profiler.summary += timer() - kernel_time;
 
-  clover_report_step(globals, parallel, vol, mass, ie, ke, mass);
+  clover_report_step(globals, parallel, vol, mass, ie, ke, press, invalid);
 }

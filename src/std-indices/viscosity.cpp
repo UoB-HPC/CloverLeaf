@@ -44,7 +44,7 @@ void viscosity_kernel(int x_min, int x_max, int y_min, int y_max, clover::Buffer
                      0.5 * (yvel0(i + 1, j + 0) + yvel0(i + 1, j + 1) - yvel0(i, j) - yvel0(i + 0, j + 1)) / celldx[i];
 
     double pgradx = (pressure(i + 1, j + 0) - pressure(i - 1, j + 0)) / (celldx[i] + celldx[i + 1]);
-    double pgrady = (pressure(i + 0, j + 1) - pressure(i + 0, j - 1)) / (celldy[j] + celldy[j + 2]);
+    double pgrady = (pressure(i + 0, j + 1) - pressure(i + 0, j - 1)) / (celldy[j] + celldy[j + 1]);
 
     double pgradx2 = pgradx * pgradx;
     double pgrady2 = pgrady * pgrady;

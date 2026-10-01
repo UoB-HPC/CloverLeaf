@@ -60,9 +60,10 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
     double ie = 0.0;
     double ke = 0.0;
     double press = 0.0;
+    double invalid = 0.0;
     summary operator+(const summary &s) const {
       return {
-          vol + s.vol, mass + s.mass, ie + s.ie, ke + s.ke, press + s.press,
+          vol + s.vol, mass + s.mass, ie + s.ie, ke + s.ke, press + s.press, invalid + s.invalid,
       };
     }
   };
@@ -79,7 +80,7 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
     field_type &field = t.field;
 
     clover::Range2d r(xmin + 1, ymin + 1, xmax + 2, ymax + 2);
-    s = tbb::parallel_reduce(
+    s = s + tbb::parallel_reduce(
         tbb::blocked_range2d<size_t>{r.fromY, r.toY, r.fromX, r.toX}, summary{},
         [&](const tbb::blocked_range2d<size_t> &br, summary acc) {
           for (size_t k = br.rows().begin(); k < br.rows().end(); ++k) {
@@ -92,11 +93,17 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
               }
               double cell_vol = field.volume(j, k);
               double cell_mass = cell_vol * field.density0(j, k);
+              const bool valid = cell_vol > 0.0 && cell_vol <= DBL_MAX &&
+                                 field.density0(j, k) > 0.0 && field.density0(j, k) <= DBL_MAX &&
+                                 field.energy0(j, k) >= 0.0 && field.energy0(j, k) <= DBL_MAX &&
+                                 field.pressure(j, k) >= 0.0 && field.pressure(j, k) <= DBL_MAX &&
+                                 vsqrd >= 0.0 && vsqrd <= DBL_MAX;
               acc = acc + summary{.vol = cell_vol,
                                   .mass = cell_mass,
                                   .ie = cell_mass * field.energy0(j, k),
                                   .ke = cell_mass * 0.5 * vsqrd,
-                                  .press = cell_vol * field.pressure(j, k)};
+                                  .press = cell_vol * field.pressure(j, k),
+                                  .invalid = valid ? 0.0 : 1.0};
             }
           }
           return acc;
@@ -104,14 +111,15 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
         std::plus<>(), clover::partitioner);
   }
 
-  auto [vol, mass, ie, ke, press] = s;
+  auto [vol, mass, ie, ke, press, invalid] = s;
   clover_sum(vol);
   clover_sum(mass);
   clover_sum(ie);
   clover_sum(ke);
   clover_sum(press);
+  clover_sum(invalid);
 
   if (globals.profiler_on) globals.profiler.summary += timer() - kernel_time;
 
-  clover_report_step(globals, parallel, vol, mass, ie, ke, mass);
+  clover_report_step(globals, parallel, vol, mass, ie, ke, press, invalid);
 }

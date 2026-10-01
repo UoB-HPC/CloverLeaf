@@ -111,7 +111,7 @@ void calc_dt_kernel(clover::context &ctx, int x_min, int x_max, int y_min, int y
 
   if (small != 0) {
 
-    std::cout << "Timestep information:" << std::endl
+    std::cerr << "Timestep information:" << std::endl
               << "j, k                 : " << jldt << " " << kldt << std::endl
               << "x, y                 : " << cellx[jldt] << " " << celly[kldt] << std::endl
               << "timestep : " << dt_min_val << std::endl

@@ -107,7 +107,7 @@ void advec_cell_kernel(bool use_target, int x_min, int x_max, int y_min, int y_m
             downwind = i;
             dif = donor;
           } else {
-            upwind = MIN(i + 1, x_max + 2);
+            upwind = MIN(i + 1, x_max + 3);
             donor = i;
             downwind = i - 1;
             dif = upwind;
@@ -236,7 +236,7 @@ void advec_cell_kernel(bool use_target, int x_min, int x_max, int y_min, int y_m
             downwind = j;
             dif = donor;
           } else {
-            upwind = MIN(j + 1, y_max + 2);
+            upwind = MIN(j + 1, y_max + 3);
             donor = j;
             downwind = j - 1;
             dif = upwind;

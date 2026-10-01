@@ -55,7 +55,7 @@ struct context;
 enum geometry_type { g_rect = 1, g_circ = 2, g_point = 3 };
 // In the Fortran version these are 1,2,3,4,-1, but they are used directly to index an array in this version
 enum chunk_neighbour_type { chunk_left = 0, chunk_right = 1, chunk_bottom = 2, chunk_top = 3, external_face = -1 };
-enum tile_neighbour_type { tile_left = 0, tile_right = 1, tile_bottom = 3, tile_top = 3, external_tile = -1 };
+enum tile_neighbour_type { tile_left = 0, tile_right = 1, tile_bottom = 2, tile_top = 3, external_tile = -1 };
 
 // Again, start at 0 as used for indexing an array of length NUM_FIELDS
 enum field_parameter {
@@ -271,6 +271,10 @@ struct global_variables {
 
   bool complete = false;
   bool report_test_fail = false;
+  double initial_mass = 0.0;
+  double initial_volume = 0.0;
+  double initial_energy = 0.0;
+  bool report_invariant_fail = false;
   int jdt{}, kdt{};
 
   bool profiler_on = false; // Internal code profiler to make comparisons across systems easier

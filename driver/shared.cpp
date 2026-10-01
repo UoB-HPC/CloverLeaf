@@ -95,12 +95,12 @@ static void show(std::ostream &out, const std::string &name, clover::Buffer2D<do
 // dumps all content to file; for debugging only
 void clover::dump(global_variables &g, const std::string &filename) {
   if (g.config.dumpDir.empty()) return;
-  std::cout << "Dumping globals to " << filename << std::endl;
+  std::cerr << "Dumping globals to " << filename << std::endl;
 
   const auto dir = g.config.dumpDir + "/";
   struct stat info {};
   if (stat(dir.c_str(), &info) != 0) {
-    std::cout << "Creating " << dir << " for field dump" << std::endl;
+    std::cerr << "Creating " << dir << " for field dump" << std::endl;
     if (errno = 0; mkdir(dir.c_str(), 0777) != 0) {
       std::cerr << "Cannot create " << dir << ": " << std::strerror(errno) << ", skipping field dump" << std::endl;
       return;
@@ -134,8 +134,8 @@ void clover::dump(global_variables &g, const std::string &filename) {
 
       tile_info &info = g.chunk.tiles[i].info;
       for (int l = 0; l < 4; ++l) {
-        out << "info.tile_neighbours[i]" << '=' << info.tile_neighbours[i] << "\n";
-        out << "info.external_tile_mask[i]" << '=' << info.external_tile_mask[i] << "\n";
+        out << "info.tile_neighbours[i]" << '=' << info.tile_neighbours[l] << "\n";
+        out << "info.external_tile_mask[i]" << '=' << info.external_tile_mask[l] << "\n";
       }
 
       out << "info.t_xmin" << '=' << info.t_xmin << "\n";

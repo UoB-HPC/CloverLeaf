@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <cfloat>
+
 #include "comms.h"
 #include "definitions.h"
 

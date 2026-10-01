@@ -67,7 +67,7 @@ static inline void par_reduce_nd_impl(sycl::queue &q, RangeTpe range, RangeLengt
   dot_num_groups = std::min(N, dot_num_groups);
 
 #ifdef SYCL_DEBUG
-  std::cout << "RD: dot_wgsize=" << dot_wgsize << " dot_num_groups:" << dot_num_groups << " N=" << N << "\n";
+  std::cerr << "RD: dot_wgsize=" << dot_wgsize << " dot_num_groups:" << dot_num_groups << " N=" << N << "\n";
 #endif
 
   q.submit([=](sycl::handler &h) mutable {
@@ -114,7 +114,7 @@ static inline void par_reduce_nd_impl(sycl::queue &q, RangeTpe range, RangeLengt
   q.wait_and_throw();
 #endif
 #ifdef SYCL_DEBUG
-  std::cout << "RD: done= " << N << "\n";
+  std::cerr << "RD: done= " << N << "\n";
 #endif
 }
 
@@ -123,7 +123,7 @@ template <typename nameT, class LocalType, class LocalAllocator = std::nullptr_t
 static inline void par_reduce_2d(sycl::queue &q, const clover::Range2d &range, LocalAllocator allocator, Empty empty, Functor functor,
                                  BinaryOp combiner, Finaliser finaliser) {
 #ifdef SYCL_DEBUG
-  std::cout << "par_reduce_2d " << range << "\n";
+  std::cerr << "par_reduce_2d " << range << "\n";
 #endif
   par_reduce_nd_impl<nameT, 2, clover::Range2d, LocalType, LocalAllocator, Empty, Functor, BinaryOp, Finaliser>(
       q, range, [](clover::Range2d r) { return r.sizeX * r.sizeY; },
@@ -141,7 +141,7 @@ template <typename nameT, class LocalType, class LocalAllocator = std::nullptr_t
 static inline void par_reduce_1d(sycl::queue &q, const clover::Range1d &range, LocalAllocator allocator, Empty empty, Functor functor,
                                  BinaryOp combiner, Finaliser finaliser) {
 #ifdef SYCL_DEBUG
-  std::cout << "par_reduce_1d " << range << "\n";
+  std::cerr << "par_reduce_1d " << range << "\n";
 #endif
   par_reduce_nd_impl<nameT, 1, clover::Range1d, LocalType, LocalAllocator, Empty, Functor, BinaryOp, Finaliser>(
       q, range, [](clover::Range1d r) { return r.size; }, [](sycl::id<1> gid, clover::Range1d r) { return r.from + gid[0]; }, allocator,

@@ -49,9 +49,9 @@ void report_context(const clover::context &) {
   clover::checkError(cudaGetDevice(&device));
   cudaDeviceProp props{};
   clover::checkError(cudaGetDeviceProperties(&props, device));
-  std::cout << " - Device: " //
-            << props.name << " (" << (props.totalGlobalMem / 1024 / 1024) << "MB;"
-            << "sm_" << props.major << props.minor << ")" << std::endl;
+  std::cout << " - Device: "
+            << yaml_quote(std::string(props.name) + " (" + std::to_string(props.totalGlobalMem / 1024 / 1024) +
+                          "MB;sm_" + std::to_string(props.major) + std::to_string(props.minor) + ")") << std::endl;
   std::cout << " - CUDA managed memory: "
             <<
 #ifdef CLOVER_MANAGED_ALLOC

@@ -92,7 +92,7 @@ void advec_cell_kernel(queue &queue, int x_min, int x_max, int y_min, int y_max,
           downwind = j;
           dif = donor;
         } else {
-          upwind = sycl::min(j + 1, x_max + 2);
+          upwind = sycl::min(j + 1, x_max + 3);
           donor = j;
           downwind = j - 1;
           dif = upwind;
@@ -207,7 +207,7 @@ void advec_cell_kernel(queue &queue, int x_min, int x_max, int y_min, int y_max,
           downwind = k;
           dif = donor;
         } else {
-          upwind = sycl::min(k + 1, y_max + 2);
+          upwind = sycl::min(k + 1, y_max + 3);
           donor = k;
           downwind = k - 1;
           dif = upwind;

@@ -60,14 +60,16 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
     double ie = 0.0;
     double ke = 0.0;
     double press = 0.0;
+    double invalid = 0.0;
     summary operator+(const summary &s) const {
       return {
-          vol + s.vol, mass + s.mass, ie + s.ie, ke + s.ke, press + s.press,
+          vol + s.vol, mass + s.mass, ie + s.ie, ke + s.ke, press + s.press, invalid + s.invalid,
       };
     }
   };
 
   clover::Buffer1D<summary> summaryResults(globals.context, 1);
+  summary total{};
   for (int tile = 0; tile < globals.config.tiles_per_chunk; ++tile) {
     tile_type &t = globals.chunk.tiles[tile];
 
@@ -102,18 +104,25 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
                 }
                 double cell_vol = field.volume(j, k);
                 double cell_mass = cell_vol * field.density0(j, k);
+                const bool valid = cell_vol > 0.0 && cell_vol <= DBL_MAX &&
+                                   field.density0(j, k) > 0.0 && field.density0(j, k) <= DBL_MAX &&
+                                   field.energy0(j, k) >= 0.0 && field.energy0(j, k) <= DBL_MAX &&
+                                   field.pressure(j, k) >= 0.0 && field.pressure(j, k) <= DBL_MAX &&
+                                   vsqrd >= 0.0 && vsqrd <= DBL_MAX;
 
                 acc += summary{.vol = cell_vol,
                                .mass = cell_mass,
                                .ie = cell_mass * field.energy0(j, k),
                                .ke = cell_mass * 0.5 * vsqrd,
-                               .press = cell_vol * field.pressure(j, k)};
+                               .press = cell_vol * field.pressure(j, k),
+                               .invalid = valid ? 0.0 : 1.0};
               });
         })
         .wait_and_throw();
+    total = total + summaryResults[0];
   }
   globals.context.queue.wait_and_throw();
-  auto [vol, mass, ie, ke, press] = summaryResults[0];
+  auto [vol, mass, ie, ke, press, invalid] = total;
 
   clover::free(globals.context.queue, summaryResults);
 
@@ -122,8 +131,9 @@ void field_summary(global_variables &globals, parallel_ &parallel) {
   clover_sum(ie);
   clover_sum(ke);
   clover_sum(press);
+  clover_sum(invalid);
 
   if (globals.profiler_on) globals.profiler.summary += timer() - kernel_time;
 
-  clover_report_step(globals, parallel, vol, mass, ie, ke, mass);
+  clover_report_step(globals, parallel, vol, mass, ie, ke, press, invalid);
 }

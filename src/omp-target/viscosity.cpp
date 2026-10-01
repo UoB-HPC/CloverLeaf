@@ -60,7 +60,7 @@ void viscosity_kernel(bool use_target, int x_min, int x_max, int y_min, int y_ma
                             yvel0[i + j * vels_wk_stride] - yvel0[(i + 0) + (j + 1) * vels_wk_stride]) /
                            celldx[i];
       double pgradx = (pressure[(i + 1) + (j + 0) * base_stride] - pressure[(i - 1) + (j + 0) * base_stride]) / (celldx[i] + celldx[i + 1]);
-      double pgrady = (pressure[(i + 0) + (j + 1) * base_stride] - pressure[(i + 0) + (j - 1) * base_stride]) / (celldy[j] + celldy[j + 2]);
+      double pgrady = (pressure[(i + 0) + (j + 1) * base_stride] - pressure[(i + 0) + (j - 1) * base_stride]) / (celldy[j] + celldy[j + 1]);
       double pgradx2 = pgradx * pgradx;
       double pgrady2 = pgrady * pgrady;
       double limiter = ((0.5 * (ugrad) / celldx[i]) * pgradx2 + (0.5 * (vgrad) / celldy[j]) * pgrady2 + strain2 * pgradx * pgrady) /

@@ -161,7 +161,7 @@ Result:
 ## Testing
 
 The `test_problem` option selects a reference solution check. If omitted, the check reports `SKIPPED`.
-Failed reference checks return a nonzero exit status.
+All runs also check field values, domain volume and timesteps. Failed checks return a nonzero exit status.
 
 Run the 87-step `clover_bm16_short.in` reference case and regression tests after building:
 

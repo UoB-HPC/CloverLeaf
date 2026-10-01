@@ -318,7 +318,10 @@ if (BUILD_TESTING)
     endif ()
 
     function(add_solution_case name deck outcome problem)
-        cmake_parse_arguments(CASE "" "TIMEOUT" "OUTPUT;REPORT" ${ARGN})
+        cmake_parse_arguments(CASE "" "INVARIANTS;TIMEOUT" "OUTPUT;REPORT" ${ARGN})
+        if (NOT CASE_INVARIANTS)
+            set(CASE_INVARIANTS PASSED)
+        endif ()
         if (NOT CASE_TIMEOUT)
             set(CASE_TIMEOUT ${case_timeout})
         endif ()
@@ -358,7 +361,8 @@ if (BUILD_TESTING)
 
             set(expected_output " - Total ranks: ${rank_count}" ${CASE_OUTPUT})
             if (NOT outcome STREQUAL "ABORT")
-                list(APPEND expected_output " - Outcome: ${outcome}" " - Problem: ${problem}")
+                list(APPEND expected_output " - Outcome: ${outcome}" " - Problem: ${problem}"
+                     " - Invariants: ${CASE_INVARIANTS}")
             endif ()
             add_test(NAME ${test}
                 COMMAND ${CMAKE_COMMAND} "-DTEST_COMMAND=${command}" "-DEXPECT_EXIT=${expected_exit}"
@@ -402,4 +406,62 @@ end_time=3.0
     string(REPLACE "x_cells=10" "x_cells=23" different_deck "${base_deck}")
     string(REPLACE "y_cells=2" "y_cells=11" different_deck "${different_deck}")
     add_solution_case(different_mesh "${different_deck}end_step=13\nsummary_frequency=3\n" SKIPPED none)
+    string(REGEX REPLACE "density=[0-9.]+" "density=0.0" zero_mass_deck "${base_deck}")
+    add_solution_case(zero_mass "${zero_mass_deck}end_step=1\n" FAILED none INVARIANTS FAILED)
+
+    set(cell_deck "*clover
+state 1 density=1.0 energy=2.5
+x_cells=20
+y_cells=12
+xmin=0.0
+ymin=0.0
+xmax=20.0
+ymax=12.0
+initial_timestep=0.000001
+max_timestep=0.000001
+end_step=1
+summary_frequency=0
+tiles_per_chunk=2
+")
+    foreach(field IN ITEMS density energy)
+        set(state "density=1.0 energy=2.5")
+        string(REGEX REPLACE "${field}=[0-9.]+" "${field}=-0.1" state "${state}")
+        add_solution_case(negative_cell_${field}
+            "${cell_deck}state 2 ${state} geometry=rectangle xmin=15.0 xmax=17.0 ymin=7.0 ymax=9.0\n"
+            FAILED none INVARIANTS FAILED OUTPUT "FAILED at step 0: finite summaries=1, invalid cells=4")
+    endforeach()
+    add_solution_case(nonfinite_cell
+        "${cell_deck}state 2 density=1.0 energy=nan geometry=rectangle xmin=15.0 xmax=17.0 ymin=7.0 ymax=9.0\n"
+        FAILED none INVARIANTS FAILED OUTPUT "FAILED at step 0: finite summaries=0, invalid cells=4")
+
+    string(REPLACE "energy=2.5" "energy=0.0" cold_deck "${cell_deck}")
+    add_solution_case(cold_equilibrium "${cold_deck}end_step=7\n" SKIPPED none
+        OUTPUT "Invalid cells at final summary: 0" "Total energy change: 0")
+    add_solution_case(invalid_timestep "${cell_deck}max_timestep=0.0\n" ABORT none
+        OUTPUT "invalid timestep or time does not advance")
+    # A positive dt above dtmin, but below one ULP of the accumulated time.
+    add_solution_case(stalled_time
+        "${cold_deck}initial_timestep=1.0e30\nmax_timestep=1.0e30\ntimestep_rise=1.0e-10\nend_time=1.0e40\nend_step=5\n"
+        ABORT none OUTPUT "invalid timestep or time does not advance")
+
+    # UK-MAC Serial b9a2b9c / OpenMP 022eb96 / ref 0fdb917, Fortran kernels: negative fluxes across unequal tiles
+    set(circle_deck "*clover
+state 1 density=0.2 energy=1.0
+state 2 density=1.0 energy=2.5 geometry=circle xmin=4.0 ymin=1.0 radius=0.6
+x_cells=23
+y_cells=11
+xmin=0.0
+ymin=0.0
+xmax=10.0
+ymax=2.0
+initial_timestep=0.004
+max_timestep=0.04
+end_time=3.0
+end_step=30
+summary_frequency=1
+")
+    foreach(tiles IN ITEMS 1 6)
+        add_solution_case(circle_${tiles}_tiles "${circle_deck}tiles_per_chunk=${tiles}\n" SKIPPED none
+            REPORT "   1.256649e-01   6.283245e+00   3.573257e-01")
+    endforeach()
 endif ()
