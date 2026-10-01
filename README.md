@@ -63,6 +63,26 @@ $ ./build/<model>-cloverleaf
 The `MODEL` option selects one implementation of CloverLeaf to build.
 The source for each model's implementations are located in `./src/<model>`.
 
+### Static builds
+
+Build the serial model statically with:
+
+```shell
+$ cmake -Bbuild-static-serial -H. -DMODEL=serial -DENABLE_MPI=OFF \
+    -DCMAKE_EXE_LINKER_FLAGS=-static
+$ cmake --build build-static-serial
+```
+
+For a static GCC OpenMP build, select GCC's static OpenMP runtime explicitly:
+
+```shell
+$ CXX=g++
+$ cmake -Bbuild-static-omp -H. -DMODEL=omp -DENABLE_MPI=OFF \
+    -DCMAKE_CXX_COMPILER="$CXX" -DCMAKE_EXE_LINKER_FLAGS=-static \
+    -DOpenMP_gomp_LIBRARY="$("$CXX" -print-file-name=libgomp.a)"
+$ cmake --build build-static-omp
+```
+
 ## Running
 
 CloverLeaf supports the following options:
