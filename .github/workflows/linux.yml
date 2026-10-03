@@ -70,11 +70,11 @@ jobs:
           - {variant: "clang-17-omp", model: "omp", cmake_args: *clang_omp_flags, model_packages: "libomp-17-dev", toolchain: *clang_17}
           - {variant: "clang-18-serial", model: "serial", toolchain: &clang_18 {image: "docker.io/library/ubuntu:24.04", cc: "clang-18", cxx: "clang++-18", packages: "clang-18"}}
           - {variant: "clang-18-omp", model: "omp", cmake_args: *clang_omp_flags, model_packages: "libomp-18-dev", toolchain: *clang_18}
-          - {variant: "clang-19-serial", model: "serial", toolchain: &clang_19 {image: "docker.io/library/ubuntu:26.04", cc: "clang-19", cxx: "clang++-19", packages: "clang-19"}}
+          - {variant: "clang-19-serial", model: "serial", toolchain: &clang_19 {image: "docker.io/library/ubuntu:26.04", cc: "clang-19", cxx: "clang++-19", packages: "clang-19 libstdc++-16-dev"}}
           - {variant: "clang-19-omp", model: "omp", cmake_args: *clang_omp_flags, model_packages: "libomp-19-dev", toolchain: *clang_19}
-          - {variant: "clang-20-serial", model: "serial", toolchain: &clang_20 {image: "docker.io/library/ubuntu:26.04", cc: "clang-20", cxx: "clang++-20", packages: "clang-20"}}
+          - {variant: "clang-20-serial", model: "serial", toolchain: &clang_20 {image: "docker.io/library/ubuntu:26.04", cc: "clang-20", cxx: "clang++-20", packages: "clang-20 libstdc++-16-dev"}}
           - {variant: "clang-20-omp", model: "omp", cmake_args: *clang_omp_flags, model_packages: "libomp-20-dev", toolchain: *clang_20}
-          - {variant: "clang-21-serial", model: "serial", toolchain: &clang_21 {image: "docker.io/library/ubuntu:26.04", cc: "clang-21", cxx: "clang++-21", packages: "clang-21"}}
+          - {variant: "clang-21-serial", model: "serial", toolchain: &clang_21 {image: "docker.io/library/ubuntu:26.04", cc: "clang-21", cxx: "clang++-21", packages: "clang-21 libstdc++-16-dev"}}
           - {variant: "clang-21-omp", model: "omp", cmake_args: *clang_omp_flags, model_packages: "libomp-21-dev", toolchain: *clang_21}
           - {variant: "oneapi-serial", model: "serial", toolchain: &oneapi {architectures: [x86_64], image: "docker.io/library/ubuntu:24.04", cc: "/opt/intel/oneapi/compiler/2025.3/bin/icx", cxx: "/opt/intel/oneapi/compiler/2025.3/bin/icpx",
               packages: "intel-oneapi-dpcpp-cpp-2025.3", apt_key: "https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB", apt_source: "https://apt.repos.intel.com/oneapi
