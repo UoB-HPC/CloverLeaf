@@ -32,10 +32,14 @@
 
   #if ONEDPL_USE_DPCPP_BACKEND
 
-    #include <CL/sycl.hpp>
+    #if __has_include(<sycl/sycl.hpp>)
+      #include <sycl/sycl.hpp>
+    #else
+      #include <CL/sycl.hpp>
+    #endif
 
 const static auto EXEC_POLICY =
-    oneapi::dpl::execution::device_policy<>{oneapi::dpl::execution::make_device_policy(cl::sycl::device{cl::sycl::default_selector_v})};
+    oneapi::dpl::execution::device_policy<>{oneapi::dpl::execution::make_device_policy(sycl::device{sycl::default_selector_v})};
 
 template <typename T> T *alloc_raw(size_t size) { return sycl::malloc_shared<T>(size, EXEC_POLICY.queue()); }
 
